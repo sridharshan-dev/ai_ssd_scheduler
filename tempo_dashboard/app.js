@@ -315,8 +315,8 @@ function stepSimulation(deltaUs) {
         }
     });
 
-    // Ingest arriving requests up to current simTime
-    while (simState.traceIndex < simState.trace.length && simState.trace[simState.traceIndex].arrivalUs <= now) {
+    // Ingest arriving requests: maintain an active batch in the queue (5 to 10 requests)
+    while ((simState.s3.queue.length < 8 || (simState.traceIndex < simState.trace.length && simState.trace[simState.traceIndex].arrivalUs <= now)) && simState.traceIndex < simState.trace.length) {
         const req = simState.trace[simState.traceIndex++];
         if (simState.s1.queue.length < 32) simState.s1.queue.push({ ...req });
         if (simState.s3.queue.length < 32) simState.s3.queue.push({ ...req });
@@ -370,10 +370,108 @@ function stepSimulation(deltaUs) {
         }
 
         // Log firmware divergence events when TEMPO avoids busy write channels
-        if (Math.random() < 0.12 && simState.s1.queue.length > 0) {
+        if (Math.random() < 0.10 && simState.s1.queue.length > 0) {
             logDivergence(now, req);
         }
     }
+}
+
+// Single-Token Inspection Step (Step 1 Token)
+function stepSingleToken() {
+    simState.isRunning = false;
+    const playIcon = document.getElementById('play-icon');
+    const playText = document.getElementById('play-text');
+    const btn = document.getElementById('btn-play-pause');
+    if (playIcon) playIcon.textContent = '▶';
+    if (playText) playText.textContent = 'Resume';
+    if (btn) {
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-primary');
+    }
+
+    // Ensure queue has requests to step
+    while (simState.s3.queue.length < 5 && simState.traceIndex < simState.trace.length) {
+        const req = simState.trace[simState.traceIndex++];
+        simState.s1.queue.push({ ...req });
+        simState.s3.queue.push({ ...req });
+    }
+
+    if (simState.s3.queue.length === 0) return;
+
+    // Advance simulation time slightly
+    simState.simTimeUs += 35.0;
+    const now = simState.simTimeUs;
+
+    // Update physical channels and clean up completed operations
+    [simState.s1, simState.s3].forEach(sched => {
+        for (const ch of sched.channels) {
+            for (const lun of ch.luns) {
+                if (lun.busyUntil <= now) lun.currentOp = 'IDLE';
+            }
+        }
+    });
+
+    // Step S1
+    const s1Idx = arbitrateS1(simState.s1.queue);
+    let s1Req = null;
+    if (s1Idx >= 0) {
+        s1Req = simState.s1.queue.splice(s1Idx, 1)[0];
+        const compUs = dispatchRequest(simState.s1.channels, s1Req, now, false);
+        const lat = compUs - s1Req.arrivalUs;
+        const missed = (compUs > s1Req.deadlineUs);
+        if (s1Req.tier === 'CRITICAL') {
+            simState.s1.critTotal++;
+            if (missed) {
+                simState.s1.critMisses++;
+                logMiss(compUs, s1Req.id, lat);
+            }
+            simState.s1.latencies.push(lat);
+        }
+    }
+
+    // Step S3 (TEMPO)
+    const s3Idx = arbitrateS3(simState.s3.queue, simState.s3.channels, now);
+    if (s3Idx >= 0) {
+        const s3Req = simState.s3.queue.splice(s3Idx, 1)[0];
+        const compUs = dispatchRequest(simState.s3.channels, s3Req, now, true);
+        const lat = compUs - s3Req.arrivalUs;
+        const missed = (compUs > s3Req.deadlineUs);
+
+        if (s3Req.tier === 'CRITICAL') {
+            simState.s3.critTotal++;
+            if (missed) simState.s3.critMisses++;
+            simState.s3.latencies.push(lat);
+
+            const s1Lat = (s1Req && s1Req.tier === 'CRITICAL') ? (s1Req.lat || lat) : lat;
+            simState.tokenHistory.push({
+                s1Lat: s1Lat,
+                s3Lat: lat,
+                s1Missed: (s1Lat > CRITICAL_DEADLINE_US),
+                s3Missed: missed
+            });
+            if (simState.tokenHistory.length > 50) simState.tokenHistory.shift();
+
+            if (!missed && (simState.s1.critMisses > simState.s3.critMisses)) {
+                simState.rescuedTokens = simState.s1.critMisses - simState.s3.critMisses;
+            }
+        }
+
+        // Log detailed step inspection
+        const log = document.getElementById('inspector-log');
+        if (log) {
+            const remSlack = Math.max(0, s3Req.deadlineUs - now);
+            const entry = document.createElement('div');
+            entry.className = 'log-entry log-divergence';
+            entry.innerHTML = `
+                <span class="log-ts mono">[${now.toFixed(1)} µs]</span>
+                <span class="log-msg"><strong>[Step 1 Token]</strong> Dispatched Req #${s3Req.id} (<strong>${s3Req.tier}</strong>) -> Target: Channels [${s3Req.channels.join(', ')}] | Remaining Slack: <strong>${remSlack.toFixed(0)} µs</strong> | CH ${s3Req.channels[0]} ${s3Req.op === 'READ' ? 'SENSING (36 µs)' : 'PROGRAM (185 µs)'}</span>
+            `;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+    }
+
+    render();
 }
 
 // Log Divergences to Inspector Terminal
@@ -622,12 +720,12 @@ function render() {
 // Simulation Main Loop (60 FPS)
 let lastTimestamp = performance.now();
 function animationLoop(timestamp) {
-    const elapsedMs = timestamp - lastTimestamp;
+    const elapsedMs = Math.min(timestamp - lastTimestamp, 100.0);
     lastTimestamp = timestamp;
 
     if (simState.isRunning) {
-        // Step forward in simulation microseconds
-        const stepUs = Math.min(elapsedMs * 3.0 * simState.speedMultiplier, 300.0);
+        // Human-observable pacing: 0.1x is ultra slow-motion, 1x is smooth real-time
+        const stepUs = Math.min(elapsedMs * 0.4 * simState.speedMultiplier, 250.0);
         stepSimulation(stepUs);
     }
 
@@ -675,6 +773,13 @@ function resetSimulation() {
 
     simState.trace = generateTrace(simState.activeScenario);
 
+    // Pre-populate queue with initial batch of 6 requests from trace so cards are immediately visible!
+    for (let i = 0; i < 6 && simState.traceIndex < simState.trace.length; i++) {
+        const req = simState.trace[simState.traceIndex++];
+        simState.s1.queue.push({ ...req });
+        simState.s3.queue.push({ ...req });
+    }
+
     const playBtn = document.getElementById('btn-play-pause');
     if (playBtn) {
         playBtn.classList.remove('btn-secondary');
@@ -688,7 +793,7 @@ function resetSimulation() {
         log.innerHTML = `
             <div class="log-entry log-system">
                 <span class="log-ts mono">[0.0 µs]</span>
-                <span class="log-msg">Simulation reset to zero. Loaded ${simState.trace.length} requests from ${simState.activeScenario} profile.</span>
+                <span class="log-msg">Simulation reset to zero. Loaded ${simState.trace.length} requests. Initial 6 requests buffered in NVMe Submission Queue.</span>
             </div>
         `;
     }
@@ -730,11 +835,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Step Button
-    document.getElementById('btn-step').addEventListener('click', () => {
-        simState.isRunning = false;
-        stepSimulation(60.0);
-    });
+    // Step 1 Token Button (Inspection Mode)
+    document.getElementById('btn-step').addEventListener('click', stepSingleToken);
 
     // Reset Button
     document.getElementById('btn-reset').addEventListener('click', resetSimulation);

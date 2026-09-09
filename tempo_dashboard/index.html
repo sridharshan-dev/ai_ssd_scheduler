@@ -74,8 +74,8 @@
                     <button id="btn-play-pause" class="btn btn-primary">
                         <span id="play-icon">▶</span> <span id="play-text">Start Simulation</span>
                     </button>
-                    <button id="btn-step" class="btn btn-secondary" title="Step forward one request">
-                        <span>⏭</span> Step
+                    <button id="btn-step" class="btn btn-secondary" title="Step 1 Request (Inspection Mode)">
+                        <span>⏭</span> Step 1 Token
                     </button>
                     <button id="btn-reset" class="btn btn-danger" title="Reset simulation state">
                         <span>↺</span> Reset
@@ -85,10 +85,11 @@
                 <div class="speed-selector">
                     <span class="control-label">Speed:</span>
                     <div class="radio-group">
+                        <button class="speed-btn" data-speed="0.1">0.1x Slow-Mo</button>
+                        <button class="speed-btn" data-speed="0.5">0.5x</button>
                         <button class="speed-btn active" data-speed="1">1x</button>
                         <button class="speed-btn" data-speed="5">5x</button>
-                        <button class="speed-btn" data-speed="25">25x</button>
-                        <button class="speed-btn" data-speed="100">Max</button>
+                        <button class="speed-btn" data-speed="25">Max</button>
                     </div>
                 </div>
 
