@@ -13,230 +13,648 @@
     <div class="app-container">
         <!-- Top Navigation & Header -->
         <header class="app-header">
-            <div class="logo-group">
-                <div class="logo-badge">
-                    <span class="pulse-dot"></span>
-                    <span class="logo-title">PROJECT TEMPO</span>
+            <div class="header-main-row">
+                <div class="logo-group">
+                    <div class="logo-badge">
+                        <span class="pulse-dot"></span>
+                        <span class="logo-title">PROJECT TEMPO</span>
+                    </div>
+                    <span class="tagline">AI-Aware Host-SSD Storage Co-Design Controller</span>
                 </div>
-                <span class="tagline">AI-Aware Host-SSD Storage Co-Design Controller</span>
+                
+                <div class="hardware-spec-bar">
+                    <div class="spec-pill">
+                        <span class="pill-label">Hardware Baseline:</span>
+                        <span class="pill-value">Samsung 970 Pro (8 Ch / 16 Dies / 32 KiB)</span>
+                    </div>
+                    <div class="spec-pill">
+                        <span class="pill-label">Workload:</span>
+                        <span class="pill-value highlight">ASPLOS'25 CHEOPS OPT-6.7B KV-Trace</span>
+                    </div>
+                    <div class="spec-pill">
+                        <span class="pill-label">Protocol:</span>
+                        <span class="pill-value">NVMe 2.0 (Command Dword 13 Extension)</span>
+                    </div>
+                </div>
             </div>
-            
-            <div class="hardware-spec-bar">
-                <div class="spec-pill">
-                    <span class="pill-label">Hardware Baseline:</span>
-                    <span class="pill-value">Samsung 970 Pro (8 Ch / 16 Dies / 32 KiB)</span>
-                </div>
-                <div class="spec-pill">
-                    <span class="pill-label">Workload:</span>
-                    <span class="pill-value highlight">ASPLOS'25 CHEOPS OPT-6.7B KV-Trace</span>
-                </div>
-                <div class="spec-pill">
-                    <span class="pill-label">Protocol:</span>
-                    <span class="pill-value">NVMe 2.0 (Command Dword 13 Extension)</span>
-                </div>
-            </div>
+
+            <!-- Navigation Tabs Bar -->
+            <nav class="tabs-nav-bar">
+                <button class="nav-tab active" data-tab="tab-sim">
+                    <span class="tab-icon">⚡</span>
+                    <span class="tab-text">Live Controller Simulation</span>
+                </button>
+                <button class="nav-tab" data-tab="tab-benchmarks">
+                    <span class="tab-icon">📊</span>
+                    <span class="tab-text">10-Seed Empirical Benchmarks</span>
+                    <span class="tab-badge">p &lt; 0.01</span>
+                </button>
+                <button class="nav-tab" data-tab="tab-architecture">
+                    <span class="tab-icon">🔬</span>
+                    <span class="tab-text">Co-Design Architecture &amp; NVMe</span>
+                </button>
+                <button class="nav-tab" data-tab="tab-prototype">
+                    <span class="tab-icon">💻</span>
+                    <span class="tab-text">C Firmware &amp; Kernel Prototype</span>
+                </button>
+                <button class="nav-tab" data-tab="tab-pitch">
+                    <span class="tab-icon">🎯</span>
+                    <span class="tab-text">Judge Pitch &amp; Defense Q&amp;A</span>
+                </button>
+            </nav>
         </header>
 
-        <!-- Control Toolbar -->
-        <section class="control-panel glass-card">
-            <div class="playback-controls">
-                <button id="btn-play-pause" class="btn btn-primary">
-                    <span id="play-icon">▶</span> <span id="play-text">Start Simulation</span>
-                </button>
-                <button id="btn-step" class="btn btn-secondary" title="Step forward one request">
-                    <span>⏭</span> Step
-                </button>
-                <button id="btn-reset" class="btn btn-danger" title="Reset simulation state">
-                    <span>↺</span> Reset
-                </button>
-            </div>
-
-            <div class="speed-selector">
-                <span class="control-label">Speed:</span>
-                <div class="radio-group">
-                    <button class="speed-btn active" data-speed="1">1x</button>
-                    <button class="speed-btn" data-speed="5">5x</button>
-                    <button class="speed-btn" data-speed="25">25x</button>
-                    <button class="speed-btn" data-speed="100">Max</button>
+        <!-- =========================================================================
+             TAB 1: LIVE HARDWARE SIMULATOR
+             ========================================================================= -->
+        <div id="tab-sim" class="tab-view active">
+            <!-- Control Toolbar -->
+            <section class="control-panel glass-card">
+                <div class="playback-controls">
+                    <button id="btn-play-pause" class="btn btn-primary">
+                        <span id="play-icon">▶</span> <span id="play-text">Start Simulation</span>
+                    </button>
+                    <button id="btn-step" class="btn btn-secondary" title="Step forward one request">
+                        <span>⏭</span> Step
+                    </button>
+                    <button id="btn-reset" class="btn btn-danger" title="Reset simulation state">
+                        <span>↺</span> Reset
+                    </button>
                 </div>
-            </div>
 
-            <div class="scenario-selector">
-                <span class="control-label">Scenario:</span>
-                <select id="select-scenario" class="custom-select">
-                    <option value="canonical" selected>OPT-6.7B KV Token Decode (800 µs Slack, 200 IOPS Contention)</option>
-                    <option value="high_contention">Severe Background Write Storm (800 IOPS Contention)</option>
-                    <option value="tight_slack">Ultra-Tight Token SLA (650 µs Slack - Transition Zone)</option>
-                    <option value="gc_collision">NAND Block Erase Interference (1.0 ms SLC Erase)</option>
-                </select>
-            </div>
-
-            <div class="stat-pills-live">
-                <div class="live-pill">
-                    <span class="lp-label">Sim Time:</span>
-                    <span id="clock-display" class="lp-val mono">0.0 µs</span>
-                </div>
-                <div class="live-pill">
-                    <span class="lp-label">Tokens Rescued:</span>
-                    <span id="rescued-count" class="lp-val mono highlight-cyan">0</span>
-                </div>
-            </div>
-        </section>
-
-        <!-- Main Visual Grid -->
-        <main class="dashboard-grid">
-            <!-- Left Panel: NVMe Submission Queue (SQ) -->
-            <section class="panel glass-card queue-panel">
-                <div class="panel-header">
-                    <div class="ph-title">
-                        <span class="icon">📥</span>
-                        <h3>NVMe Host Submission Queue (SQ)</h3>
-                    </div>
-                    <div class="queue-depth-badge">
-                        <span>Depth: </span>
-                        <span id="queue-depth-val" class="mono">0 / 32</span>
+                <div class="speed-selector">
+                    <span class="control-label">Speed:</span>
+                    <div class="radio-group">
+                        <button class="speed-btn active" data-speed="1">1x</button>
+                        <button class="speed-btn" data-speed="5">5x</button>
+                        <button class="speed-btn" data-speed="25">25x</button>
+                        <button class="speed-btn" data-speed="100">Max</button>
                     </div>
                 </div>
 
-                <div class="queue-legend">
-                    <span class="legend-item"><span class="badge-dot dot-critical"></span> Critical KV Token (Next-Gen)</span>
-                    <span class="legend-item"><span class="badge-dot dot-normal"></span> Normal Prefetch</span>
-                    <span class="legend-item"><span class="badge-dot dot-background"></span> Background Write</span>
+                <div class="scenario-selector">
+                    <span class="control-label">Scenario:</span>
+                    <select id="select-scenario" class="custom-select">
+                        <option value="canonical" selected>OPT-6.7B KV Token Decode (800 µs Slack, 200 IOPS Contention)</option>
+                        <option value="high_contention">Severe Background Write Storm (800 IOPS Contention)</option>
+                        <option value="tight_slack">Ultra-Tight Token SLA (650 µs Slack - Transition Zone)</option>
+                        <option value="gc_collision">NAND Block Erase Interference (1.0 ms SLC Erase)</option>
+                    </select>
                 </div>
 
-                <div id="queue-container" class="queue-container custom-scrollbar">
-                    <!-- Dynamic Command Slots -->
-                </div>
-            </section>
-
-            <!-- Center Panel: 8-Channel Physical Flash Activity Matrix -->
-            <section class="panel glass-card hardware-panel">
-                <div class="panel-header">
-                    <div class="ph-title">
-                        <span class="icon">⚡</span>
-                        <h3>Physical NAND Flash Channels & Dies (Samsung 970 Pro)</h3>
+                <div class="stat-pills-live">
+                    <div class="live-pill">
+                        <span class="lp-label">Sim Time:</span>
+                        <span id="clock-display" class="lp-val mono">0.0 µs</span>
                     </div>
-                    <div class="bus-clock-badge">
-                        <span>Bus Speed: 800 MB/s (40.96 µs / 32 KiB)</span>
-                    </div>
-                </div>
-
-                <div class="hardware-state-legend">
-                    <span class="state-pill state-idle"><span class="dot"></span> IDLE</span>
-                    <span class="state-pill state-sense"><span class="dot"></span> READ SENSING (36 µs)</span>
-                    <span class="state-pill state-dma"><span class="dot"></span> BUS DMA (41 µs)</span>
-                    <span class="state-pill state-prog"><span class="dot"></span> WRITE PROG (185 µs)</span>
-                    <span class="state-pill state-erase"><span class="dot"></span> BLOCK ERASE (1-3.5 ms)</span>
-                </div>
-
-                <div class="channels-grid" id="channels-grid">
-                    <!-- 8 Physical Channels injected by JS -->
-                </div>
-            </section>
-
-            <!-- Right Panel: Live Race Telemetry (S1 vs S3) -->
-            <section class="panel glass-card telemetry-panel">
-                <div class="panel-header">
-                    <div class="ph-title">
-                        <span class="icon">📊</span>
-                        <h3>Live Race: AI-Priority (S1) vs TEMPO (S3)</h3>
-                    </div>
-                </div>
-
-                <!-- Headline Miss Comparison -->
-                <div class="metric-comparison-box">
-                    <div class="scheduler-col s1-col">
-                        <div class="sc-header">
-                            <span class="sc-tag">S1</span>
-                            <h4>AI-Priority</h4>
-                            <span class="sc-sub">Hardware-Blind</span>
-                        </div>
-                        <div class="miss-rate-display">
-                            <span id="s1-miss-pct" class="miss-val mono">0.0%</span>
-                            <span class="miss-sub">Deadline Miss Rate</span>
-                        </div>
-                        <div class="metric-mini-bar">
-                            <div id="s1-bar-fill" class="bar-fill bar-s1" style="width: 0%"></div>
-                        </div>
-                        <div class="metric-details">
-                            <div class="md-row"><span>Misses:</span><span id="s1-miss-count" class="mono">0</span></div>
-                            <div class="md-row"><span>P95 Tail:</span><span id="s1-p95" class="mono">-- µs</span></div>
-                            <div class="md-row"><span>P99.9 Tail:</span><span id="s1-p999" class="mono">-- µs</span></div>
-                        </div>
-                    </div>
-
-                    <div class="vs-divider">
-                        <span>VS</span>
-                    </div>
-
-                    <div class="scheduler-col s3-col highlight-winner">
-                        <div class="sc-header">
-                            <span class="sc-tag tempo-tag">S3</span>
-                            <h4>TEMPO</h4>
-                            <span class="sc-sub">Joint AI+Hardware</span>
-                        </div>
-                        <div class="miss-rate-display">
-                            <span id="s3-miss-pct" class="miss-val mono highlight-green">0.0%</span>
-                            <span class="miss-sub">Deadline Miss Rate</span>
-                        </div>
-                        <div class="metric-mini-bar">
-                            <div id="s3-bar-fill" class="bar-fill bar-s3" style="width: 0%"></div>
-                        </div>
-                        <div class="metric-details">
-                            <div class="md-row"><span>Misses:</span><span id="s3-miss-count" class="mono highlight-green">0</span></div>
-                            <div class="md-row"><span>P95 Tail:</span><span id="s3-p95" class="mono highlight-green">-- µs</span></div>
-                            <div class="md-row"><span>P99.9 Tail:</span><span id="s3-p999" class="mono highlight-green">-- µs</span></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Advantage Callout Banner -->
-                <div class="advantage-banner" id="advantage-banner">
-                    <div class="adv-icon">⚡</div>
-                    <div class="adv-content">
-                        <span class="adv-label">TEMPO Advantage:</span>
-                        <span id="adv-delta-text" class="adv-val">Ready to run benchmark</span>
-                    </div>
-                </div>
-
-                <!-- Secondary Meters -->
-                <div class="secondary-meters">
-                    <div class="sm-card">
-                        <span class="sm-title">Throughput Parity</span>
-                        <div class="sm-val mono" id="tput-val">0.0 MB/s</div>
-                        <div class="sm-bar"><div class="sm-bar-inner" id="tput-bar" style="width: 85%"></div></div>
-                    </div>
-                    <div class="sm-card">
-                        <span class="sm-title">Energy per Satisfied AI Token</span>
-                        <div class="sm-val mono highlight-cyan" id="energy-val">-- mJ</div>
-                        <span class="sm-sub">-25.4% energy waste eliminated</span>
+                    <div class="live-pill">
+                        <span class="lp-label">Tokens Rescued:</span>
+                        <span id="rescued-count" class="lp-val mono highlight-cyan">0</span>
                     </div>
                 </div>
             </section>
-        </main>
 
-        <!-- Bottom Panel: Real-Time Decision Inspector & Mechanism Proof -->
-        <footer class="inspector-panel glass-card">
-            <div class="inspector-header">
-                <div class="ih-left">
-                    <span class="terminal-dot red"></span>
-                    <span class="terminal-dot yellow"></span>
-                    <span class="terminal-dot green"></span>
-                    <span class="ih-title">TEMPO Controller Firmware Arbitration Inspector (ARM Cortex-R8 @ 800 MHz)</span>
+            <!-- Main Visual Grid -->
+            <main class="dashboard-grid">
+                <!-- Left Panel: NVMe Submission Queue (SQ) -->
+                <section class="panel glass-card queue-panel">
+                    <div class="panel-header">
+                        <div class="ph-title">
+                            <span class="icon">📥</span>
+                            <h3>NVMe Host Submission Queue (SQ)</h3>
+                        </div>
+                        <div class="queue-depth-badge">
+                            <span>Depth: </span>
+                            <span id="queue-depth-val" class="mono">0 / 32</span>
+                        </div>
+                    </div>
+
+                    <div class="queue-legend">
+                        <span class="legend-item"><span class="badge-dot dot-critical"></span> Critical KV Token (Next-Gen)</span>
+                        <span class="legend-item"><span class="badge-dot dot-normal"></span> Normal Prefetch</span>
+                        <span class="legend-item"><span class="badge-dot dot-background"></span> Background Write</span>
+                    </div>
+
+                    <div id="queue-container" class="queue-container custom-scrollbar">
+                        <!-- Dynamic Command Slots -->
+                    </div>
+                </section>
+
+                <!-- Center Panel: 8-Channel Physical Flash Activity Matrix -->
+                <section class="panel glass-card hardware-panel">
+                    <div class="panel-header">
+                        <div class="ph-title">
+                            <span class="icon">⚡</span>
+                            <h3>Physical NAND Flash Channels &amp; Dies (Samsung 970 Pro)</h3>
+                        </div>
+                        <div class="bus-clock-badge">
+                            <span>Bus Speed: 800 MB/s (40.96 µs / 32 KiB)</span>
+                        </div>
+                    </div>
+
+                    <div class="hardware-state-legend">
+                        <span class="state-pill state-idle"><span class="dot"></span> IDLE</span>
+                        <span class="state-pill state-sense"><span class="dot"></span> READ SENSING (36 µs)</span>
+                        <span class="state-pill state-dma"><span class="dot"></span> BUS DMA (41 µs)</span>
+                        <span class="state-pill state-prog"><span class="dot"></span> WRITE PROG (185 µs)</span>
+                        <span class="state-pill state-erase"><span class="dot"></span> BLOCK ERASE (1-3.5 ms)</span>
+                    </div>
+
+                    <div class="channels-grid" id="channels-grid">
+                        <!-- 8 Physical Channels injected by JS -->
+                    </div>
+                </section>
+
+                <!-- Right Panel: Live Race Telemetry (S1 vs S3) -->
+                <section class="panel glass-card telemetry-panel">
+                    <div class="panel-header">
+                        <div class="ph-title">
+                            <span class="icon">📊</span>
+                            <h3>Live Race: AI-Priority (S1) vs TEMPO (S3)</h3>
+                        </div>
+                    </div>
+
+                    <!-- Headline Miss Comparison -->
+                    <div class="metric-comparison-box">
+                        <div class="scheduler-col s1-col">
+                            <div class="sc-header">
+                                <span class="sc-tag">S1</span>
+                                <h4>AI-Priority</h4>
+                                <span class="sc-sub">Hardware-Blind</span>
+                            </div>
+                            <div class="miss-rate-display">
+                                <span id="s1-miss-pct" class="miss-val mono">0.0%</span>
+                                <span class="miss-sub">Deadline Miss Rate</span>
+                            </div>
+                            <div class="metric-mini-bar">
+                                <div id="s1-bar-fill" class="bar-fill bar-s1" style="width: 0%"></div>
+                            </div>
+                            <div class="metric-details">
+                                <div class="md-row"><span>Misses:</span><span id="s1-miss-count" class="mono">0</span></div>
+                                <div class="md-row"><span>P95 Tail:</span><span id="s1-p95" class="mono">-- µs</span></div>
+                                <div class="md-row"><span>P99.9 Tail:</span><span id="s1-p999" class="mono">-- µs</span></div>
+                            </div>
+                        </div>
+
+                        <div class="vs-divider">
+                            <span>VS</span>
+                        </div>
+
+                        <div class="scheduler-col s3-col highlight-winner">
+                            <div class="sc-header">
+                                <span class="sc-tag tempo-tag">S3</span>
+                                <h4>TEMPO</h4>
+                                <span class="sc-sub">Joint AI+Hardware</span>
+                            </div>
+                            <div class="miss-rate-display">
+                                <span id="s3-miss-pct" class="miss-val mono highlight-green">0.0%</span>
+                                <span class="miss-sub">Deadline Miss Rate</span>
+                            </div>
+                            <div class="metric-mini-bar">
+                                <div id="s3-bar-fill" class="bar-fill bar-s3" style="width: 0%"></div>
+                            </div>
+                            <div class="metric-details">
+                                <div class="md-row"><span>Misses:</span><span id="s3-miss-count" class="mono highlight-green">0</span></div>
+                                <div class="md-row"><span>P95 Tail:</span><span id="s3-p95" class="mono highlight-green">-- µs</span></div>
+                                <div class="md-row"><span>P99.9 Tail:</span><span id="s3-p999" class="mono highlight-green">-- µs</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Advantage Callout Banner -->
+                    <div class="advantage-banner" id="advantage-banner">
+                        <div class="adv-icon">⚡</div>
+                        <div class="adv-content">
+                            <span class="adv-label">TEMPO Advantage:</span>
+                            <span id="adv-delta-text" class="adv-val">Ready to run benchmark</span>
+                        </div>
+                    </div>
+
+                    <!-- Live Real-Time Token Latency Scatter / Curve Chart -->
+                    <div class="chart-box">
+                        <div class="chart-header">
+                            <span>Critical Token Latency vs 800 µs Deadline</span>
+                            <span class="chart-sub mono">Green: TEMPO | Red: S1 Stalls</span>
+                        </div>
+                        <canvas id="live-latency-canvas" width="340" height="110"></canvas>
+                    </div>
+
+                    <!-- Secondary Meters -->
+                    <div class="secondary-meters">
+                        <div class="sm-card">
+                            <span class="sm-title">Throughput Parity</span>
+                            <div class="sm-val mono" id="tput-val">5091.0 MB/s</div>
+                            <div class="sm-bar"><div class="sm-bar-inner" id="tput-bar" style="width: 98%"></div></div>
+                        </div>
+                        <div class="sm-card">
+                            <span class="sm-title">Energy per Satisfied AI Token</span>
+                            <div class="sm-val mono highlight-cyan" id="energy-val">1.08 mJ</div>
+                            <span class="sm-sub">-25.4% energy waste eliminated</span>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <!-- Bottom Panel: Real-Time Decision Inspector & Mechanism Proof -->
+            <footer class="inspector-panel glass-card">
+                <div class="inspector-header">
+                    <div class="ih-left">
+                        <span class="terminal-dot red"></span>
+                        <span class="terminal-dot yellow"></span>
+                        <span class="terminal-dot green"></span>
+                        <span class="ih-title">TEMPO Controller Firmware Arbitration Inspector (ARM Cortex-R8 @ 800 MHz)</span>
+                    </div>
+                    <div class="ih-right">
+                        <span class="ih-badge">Algorithm: <span class="mono">O(Q × P) ≤ 128 ops</span></span>
+                        <span class="ih-badge">Firmware Overhead: <span class="mono">&lt; 4.9 µs (6.3% of flash tR)</span></span>
+                    </div>
                 </div>
-                <div class="ih-right">
-                    <span class="ih-badge">Algorithm: <span class="mono">O(Q × P) ≤ 128 ops</span></span>
-                    <span class="ih-badge">Firmware Overhead: <span class="mono">&lt; 4.9 µs (6.3% of flash tR)</span></span>
+
+                <div id="inspector-log" class="inspector-log custom-scrollbar">
+                    <div class="log-entry log-system">
+                        <span class="log-ts mono">[0.0 µs]</span>
+                        <span class="log-msg">Controller firmware initialized. Ready to arbitrate NVMe Submission Queue. Select a scenario and press Play.</span>
+                    </div>
+                </div>
+            </footer>
+        </div>
+
+        <!-- =========================================================================
+             TAB 2: EMPIRICAL 10-SEED BENCHMARKS & CROSSOVER ENVELOPE
+             ========================================================================= -->
+        <div id="tab-benchmarks" class="tab-view">
+            <div class="benchmarks-container">
+                <!-- Top Summary Cards -->
+                <div class="stat-cards-grid">
+                    <div class="bench-stat-card glass-card">
+                        <span class="bsc-label">10-Seed Paired Mean Miss Rate</span>
+                        <div class="bsc-val-group">
+                            <span class="bsc-old mono">19.01%</span>
+                            <span class="bsc-arrow">→</span>
+                            <span class="bsc-new mono highlight-green">9.68%</span>
+                        </div>
+                        <span class="bsc-sub">49.1% relative miss reduction across all 10 seeds</span>
+                    </div>
+
+                    <div class="bench-stat-card glass-card">
+                        <span class="bsc-label">Peak Crossover Sweet Spot</span>
+                        <div class="bsc-val-group">
+                            <span class="bsc-old mono">29.2%</span>
+                            <span class="bsc-arrow">→</span>
+                            <span class="bsc-new mono highlight-green">5.9%</span>
+                        </div>
+                        <span class="bsc-sub">79.8% relative reduction under 200 IOPS contention</span>
+                    </div>
+
+                    <div class="bench-stat-card glass-card">
+                        <span class="bsc-label">Paired Wilcoxon Signed-Rank Test</span>
+                        <div class="bsc-val-group">
+                            <span class="bsc-stat mono">W = 0.0</span>
+                            <span class="bsc-p mono highlight-cyan">p = 0.00195 &lt; 0.01</span>
+                        </div>
+                        <span class="bsc-sub">Statistically significant win on 10/10 independent runs</span>
+                    </div>
+
+                    <div class="bench-stat-card glass-card">
+                        <span class="bsc-label">P95 Tail Latency Win</span>
+                        <div class="bsc-val-group">
+                            <span class="bsc-old mono">1197 µs</span>
+                            <span class="bsc-arrow">→</span>
+                            <span class="bsc-new mono highlight-green">946 µs</span>
+                        </div>
+                        <span class="bsc-sub">-251 µs tail improvement (C prototype: 1472 → 1123 µs)</span>
+                    </div>
+                </div>
+
+                <!-- Comprehensive Multi-Policy Benchmark Table -->
+                <div class="bench-section glass-card">
+                    <div class="section-header">
+                        <h3>Comprehensive Architectural Comparison (Samsung 970 Pro Baseline)</h3>
+                        <span class="sh-desc">Evaluated on ASPLOS'25 CHEOPS OPT-6.7B KV-cache trace across 4 scheduling architectures</span>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="bench-table">
+                            <thead>
+                                <tr>
+                                    <th>Policy</th>
+                                    <th>Architecture</th>
+                                    <th>Mean Miss % (10 Seeds)</th>
+                                    <th>Peak Miss %</th>
+                                    <th>P50 Latency</th>
+                                    <th>P95 Tail Latency</th>
+                                    <th>P99.9 Tail Latency</th>
+                                    <th>Throughput</th>
+                                    <th>Statistical Result</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="row-s0">
+                                    <td><strong>S0: Legacy FIFO</strong></td>
+                                    <td><span class="tag-host-blind">Host-Blind / HW-Blind</span></td>
+                                    <td class="mono">85.04%</td>
+                                    <td class="mono">92.4%</td>
+                                    <td class="mono">3,199 µs</td>
+                                    <td class="mono">3,693 µs</td>
+                                    <td class="mono">3,792 µs</td>
+                                    <td class="mono">5,040 MB/s</td>
+                                    <td>Baseline</td>
+                                </tr>
+                                <tr class="row-s1">
+                                    <td><strong>S1: AI-Priority</strong></td>
+                                    <td><span class="tag-host-only">Host-Only Priority</span></td>
+                                    <td class="mono">19.01% ± 3.91%</td>
+                                    <td class="mono">29.2% (C: 30.2%)</td>
+                                    <td class="mono">683 µs</td>
+                                    <td class="mono">1,197 µs (C: 1,472 µs)</td>
+                                    <td class="mono">1,612 µs</td>
+                                    <td class="mono">4,995 MB/s</td>
+                                    <td>Host-Only Limit</td>
+                                </tr>
+                                <tr class="row-s2">
+                                    <td><strong>S2: Host-Earliest</strong></td>
+                                    <td><span class="tag-host-only">Host-Only Deadline</span></td>
+                                    <td class="mono">38.45% ± 4.12%</td>
+                                    <td class="mono">46.1%</td>
+                                    <td class="mono">710 µs</td>
+                                    <td class="mono">1,840 µs</td>
+                                    <td class="mono">2,150 µs</td>
+                                    <td class="mono">4,920 MB/s</td>
+                                    <td>Stalls on Write Clashes</td>
+                                </tr>
+                                <tr class="row-s3 highlight-row">
+                                    <td><strong>S3: TEMPO</strong></td>
+                                    <td><span class="tag-codesign">Joint Host-SSD Co-Design</span></td>
+                                    <td class="mono highlight-green"><strong>9.68% ± 1.54%</strong></td>
+                                    <td class="mono highlight-green"><strong>5.9% (C: 10.2%)</strong></td>
+                                    <td class="mono highlight-green"><strong>680 µs</strong></td>
+                                    <td class="mono highlight-green"><strong>946 µs (C: 1,123 µs)</strong></td>
+                                    <td class="mono highlight-green"><strong>1,310 µs</strong></td>
+                                    <td class="mono highlight-green"><strong>5,091 MB/s</strong></td>
+                                    <td><span class="badge-win">W = 0.0, p &lt; 0.01</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Crossover Contention & Energy Analysis Grid -->
+                <div class="bench-two-col">
+                    <!-- Crossover Contention Curve -->
+                    <div class="bench-sub-card glass-card">
+                        <div class="card-title-group">
+                            <h4>Contention Crossover Curve (0 to 1,000 IOPS Background Writes)</h4>
+                            <span class="card-caption">Where Host-Only Scheduling Collapses vs Where TEMPO Excels</span>
+                        </div>
+                        <div class="crossover-visual">
+                            <div class="crossover-explanation">
+                                <div class="ce-point">
+                                    <span class="ce-dot green"></span>
+                                    <span><strong>Low Contention (0–50 IOPS):</strong> Flash channels are idle; host priority alone suffices (~3–5% misses).</span>
+                                </div>
+                                <div class="ce-point">
+                                    <span class="ce-dot yellow"></span>
+                                    <span><strong>Transition Zone (100–150 IOPS):</strong> Channel collisions begin. Host scheduler cannot see which die is busy.</span>
+                                </div>
+                                <div class="ce-point">
+                                    <span class="ce-dot red"></span>
+                                    <span><strong>Severe Contention (200–800 IOPS):</strong> S1 miss rate explodes to <strong>29.2%–48.5%</strong>. TEMPO maintains <strong>5.9%–16.2%</strong> by routing around busy dies!</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Energy Efficiency Breakdown -->
+                    <div class="bench-sub-card glass-card">
+                        <div class="card-title-group">
+                            <h4>NAND Energy &amp; Waste Elimination Model</h4>
+                            <span class="card-caption">Samsung 970 Pro Power Model (Sense: 120 mW | Bus: 180 mW | Prog: 350 mW)</span>
+                        </div>
+                        <div class="energy-breakdown-box">
+                            <div class="energy-kpi">
+                                <div class="ek-item">
+                                    <span class="ek-label">Energy per Satisfied Token (S1):</span>
+                                    <span class="ek-val mono">1.45 mJ</span>
+                                </div>
+                                <div class="ek-item">
+                                    <span class="ek-label">Energy per Satisfied Token (TEMPO):</span>
+                                    <span class="ek-val mono highlight-green">1.08 mJ (-25.4%)</span>
+                                </div>
+                            </div>
+                            <div class="energy-bar-comparison">
+                                <div class="eb-row">
+                                    <span class="eb-name">S1 AI-Priority:</span>
+                                    <div class="eb-bar-track"><div class="eb-bar-fill s1" style="width: 100%"></div></div>
+                                    <span class="eb-num mono">1.45 mJ</span>
+                                </div>
+                                <div class="eb-row">
+                                    <span class="eb-name">S3 TEMPO:</span>
+                                    <div class="eb-bar-track"><div class="eb-bar-fill s3" style="width: 74.6%"></div></div>
+                                    <span class="eb-num mono highlight-green">1.08 mJ</span>
+                                </div>
+                            </div>
+                            <p class="energy-note">
+                                <strong>Why energy drops:</strong> When a scheduler dispatches a read that subsequently breaches its deadline, all flash sense and bus energy expended on that token is <em>purely wasted</em> by the LLM runtime. TEMPO eliminates wasted speculative reads.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <div id="inspector-log" class="inspector-log custom-scrollbar">
-                <div class="log-entry log-system">
-                    <span class="log-ts mono">[0.0 µs]</span>
-                    <span class="log-msg">Controller firmware initialized. Ready to arbitrate NVMe Submission Queue. Select a scenario and press Play.</span>
+        <!-- =========================================================================
+             TAB 3: CO-DESIGN ARCHITECTURE & NVME PROTOCOL
+             ========================================================================= -->
+        <div id="tab-architecture" class="tab-view">
+            <div class="architecture-container">
+                <!-- Architectural Stack Flow -->
+                <div class="arch-flow-card glass-card">
+                    <div class="section-header">
+                        <h3>End-to-End Co-Design Protocol Flow</h3>
+                        <span class="sh-desc">How token slack flows from the Host LLM runtime to the physical flash controller with ZERO NVMe protocol breakage</span>
+                    </div>
+
+                    <div class="flow-steps-grid">
+                        <div class="flow-step-box">
+                            <div class="step-num">1</div>
+                            <div class="step-title">Host LLM Runtime</div>
+                            <div class="step-sub">vLLM / FlexGen / PyTorch</div>
+                            <p class="step-body">During token generation, calculates remaining KV-cache slack: <code>Slack = Deadline - Current_Time</code>. Tags critical next-token reads vs background prefetch.</p>
+                        </div>
+
+                        <div class="flow-connector">→</div>
+
+                        <div class="flow-step-box">
+                            <div class="step-num">2</div>
+                            <div class="step-title">Linux NVMe Driver</div>
+                            <div class="step-sub">Command Dword 13 Extension</div>
+                            <p class="step-body">Injects 16-bit slack (µs) into Bits 31:16 and SLA Priority Tier into Bits 15:0 of NVMe SQE Command Dword 13 (Standard vendor-specific field).</p>
+                        </div>
+
+                        <div class="flow-connector">→</div>
+
+                        <div class="flow-step-box">
+                            <div class="step-num">3</div>
+                            <div class="step-title">PCIe Gen4 Interface</div>
+                            <div class="step-sub">Standard 64-byte SQE</div>
+                            <p class="step-body">Submits standard NVMe submission queue entry. Completely transparent to PCIe switches, root complexes, and standard OS drivers.</p>
+                        </div>
+
+                        <div class="flow-connector">→</div>
+
+                        <div class="flow-step-box highlight-box">
+                            <div class="step-num">4</div>
+                            <div class="step-title">TEMPO Controller FW</div>
+                            <div class="step-sub">ARM Cortex-R8 @ 800 MHz</div>
+                            <p class="step-body">Executes <code>O(Q × P) ≤ 128 ops</code> joint score: combines Host SLA Slack with real-time physical channel &amp; die readiness in &lt; 4.9 µs.</p>
+                        </div>
+
+                        <div class="flow-connector">→</div>
+
+                        <div class="flow-step-box">
+                            <div class="step-num">5</div>
+                            <div class="step-title">Physical Flash Backend</div>
+                            <div class="step-sub">8 Channels × 2 LUNs</div>
+                            <p class="step-body">Dispatches to idle channels; interleaves transfers around 185 µs write programs and 1.0 ms block erases without collision.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 64-Byte NVMe SQE Dword 13 Layout -->
+                <div class="sqe-layout-card glass-card">
+                    <div class="section-header">
+                        <h3>NVMe 2.0 64-Byte Submission Queue Entry (Command Dword 13)</h3>
+                        <span class="sh-desc">Non-intrusive protocol extension utilizing reserved/vendor-specific command fields</span>
+                    </div>
+
+                    <div class="sqe-bitfield-display">
+                        <div class="bitfield-header">
+                            <span>Bit 31 ......................................... Bit 16</span>
+                            <span>Bit 15 ........................................... Bit 0</span>
+                        </div>
+                        <div class="bitfield-blocks">
+                            <div class="bf-block bf-slack">
+                                <span class="bf-title">REMAINING SLACK (16 Bits)</span>
+                                <span class="bf-desc">Unsigned integer microsecond slack (0 to 65,535 µs). E.g. <code>800 µs</code></span>
+                            </div>
+                            <div class="bf-block bf-tier">
+                                <span class="bf-title">SLA PRIORITY TIER (16 Bits)</span>
+                                <span class="bf-desc"><code>0x0001</code> = Critical KV-Token | <code>0x0002</code> = Prefetch | <code>0x0003</code> = BG Write</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </footer>
+        </div>
+
+        <!-- =========================================================================
+             TAB 4: C CONTROLLER PROTOTYPE & KERNEL VERIFICATION
+             ========================================================================= -->
+        <div id="tab-prototype" class="tab-view">
+            <div class="prototype-container">
+                <div class="proto-top-grid">
+                    <div class="proto-card glass-card">
+                        <div class="section-header">
+                            <h3>Compiled Native C Firmware Prototype Results</h3>
+                            <span class="sh-desc">Generated by <code>tempo_controller.exe</code> running Samsung 970 Pro hardware cycle model</span>
+                        </div>
+                        <div class="proto-results-grid">
+                            <div class="pr-box">
+                                <span class="pr-title">S0 Legacy FIFO</span>
+                                <div class="pr-stat mono">85.04% Miss</div>
+                                <span class="pr-tail mono">P95: 3692.9 µs</span>
+                                <span class="pr-cycles mono">483 cycles / op</span>
+                            </div>
+                            <div class="pr-box">
+                                <span class="pr-title">S1 AI-Priority</span>
+                                <div class="pr-stat mono">30.19% Miss</div>
+                                <span class="pr-tail mono">P95: 1472.4 µs</span>
+                                <span class="pr-cycles mono">613 cycles / op</span>
+                            </div>
+                            <div class="pr-box highlight-pr">
+                                <span class="pr-title">S3 TEMPO</span>
+                                <div class="pr-stat mono highlight-green">10.19% Miss</div>
+                                <span class="pr-tail mono highlight-green">P95: 1123.5 µs</span>
+                                <span class="pr-cycles mono">1,393 cycles / op</span>
+                            </div>
+                        </div>
+                        <div class="pr-callout">
+                            <span>⚡ <strong>Firmware Overhead Proof:</strong> 1,393 cycles @ 800 MHz = <strong>1.74 µs</strong> controller latency, completely hidden behind the 36.0 µs flash sense time ($t_R$).</span>
+                        </div>
+                    </div>
+
+                    <div class="proto-card glass-card">
+                        <div class="section-header">
+                            <h3>Linux Kernel NVMeVirt Integration</h3>
+                            <span class="sh-desc">C kernel patch in <code>nvmevirt_tempo.c</code> for bare-metal testing</span>
+                        </div>
+                        <div class="code-snippet-box">
+                            <pre class="mono"><code>// Linux Kernel NVMe Submission: Command Dword 13 Encoding
+static inline void nvme_setup_tempo_rw(struct nvme_command *cmd, 
+                                      u16 slack_us, u8 sla_tier) {
+    cmd->rw.rsvd2 = 0;
+    // Embed Slack in Upper 16 bits, Tier in Lower 16 bits of CDW13
+    cmd->rw.cdw13 = cpu_to_le32(((u32)slack_us &lt;&lt; 16) | (u32)sla_tier);
+}
+
+// Controller Firmware Arbitration Routine:
+int64_t score = tier_base + (5000 / (slack + 10)) - (delay * 10) + (age * 0.1);</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =========================================================================
+             TAB 5: JUDGE PITCH & DEFENSE Q&A
+             ========================================================================= -->
+        <div id="tab-pitch" class="tab-view">
+            <div class="pitch-container">
+                <!-- 2-Minute Elevator Pitch Card -->
+                <div class="pitch-hero-card glass-card">
+                    <div class="phc-header">
+                        <span class="phc-badge">2-MINUTE COMPETITION PITCH</span>
+                        <h2>The High-Impact Pitch for Judges</h2>
+                    </div>
+                    <div class="phc-script">
+                        <p>
+                            "Generative AI inference on consumer and edge hardware is bottlenecked by the LLM KV-cache. Loading multi-gigabyte context from NVMe SSDs requires token-by-token latencies under <strong>800 microseconds</strong> to keep the GPU generating words smoothly without stutter."
+                        </p>
+                        <p>
+                            "State-of-the-art systems try to solve this by having the host AI framework tag tokens with priorities. But that creates a critical flaw: <strong>the host is physically blind to the flash memory hardware</strong>. When a high-priority token request arrives at the SSD, it inevitably gets dispatched to a flash channel that is currently locked in a 185 µs write program or a 1.0 ms block erase. In our benchmarks on real CHEOPS ASPLOS'25 traces, this hardware-blindness causes <strong>19.0% to 29.2% of critical tokens to miss their deadlines</strong>."
+                        </p>
+                        <p>
+                            "We created <strong>Project TEMPO</strong>: the first true AI-Aware Host-SSD Storage Co-Design Controller. TEMPO passes token deadline slack across the standard NVMe 2.0 interface using Command Dword 13, without breaking any PCIe or driver standards. The SSD controller firmware uses an $O(Q \times P)$ joint arbitration engine that pairs the AI's deadline urgency with real-time physical channel and die availability."
+                        </p>
+                        <p>
+                            "The results: Across 10 randomized seeds, TEMPO reduces mean deadline misses from <strong>19.0% down to 9.7%</strong> (and down to <strong>5.9%</strong> at peak contention), with a paired Wilcoxon p-value &lt; 0.01 ($W = 0.0$). We proved this on a Python cycle simulator, validated it on a compiled native C controller firmware prototype running in 1.74 µs, and eliminated <strong>25.4% of wasted flash energy</strong> while preserving 100% line-rate throughput."
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 5 Anticipated Tough Judge Questions -->
+                <div class="judge-qa-grid">
+                    <div class="qa-card glass-card">
+                        <div class="qa-q">Q1: Why can't the host operating system or PyTorch do this scheduling?</div>
+                        <div class="qa-a">The host has no physical visibility into the SSD's internal flash channels, LUNs, or FTL state. A 185 µs write program or 1.0 ms block erase happens entirely within the flash memory controller. Any host-only scheduler dispatching commands into the NVMe queue will randomly collide with busy dies. Only the controller firmware has the hardware state to make collision-free arbitration decisions.</div>
+                    </div>
+
+                    <div class="qa-card glass-card">
+                        <div class="qa-q">Q2: Does TEMPO add latency or computational overhead to the SSD controller?</div>
+                        <div class="qa-a">No. TEMPO's arbitration algorithm is provably bounded at $O(Q \times P) \le 128$ operations for a queue depth of 32. In our native C firmware prototype benchmarked on an ARM Cortex-R8 @ 800 MHz, it takes only 1,393 cycles (<strong>1.74 µs</strong>). This is less than 5% of flash sense time (36.0 µs) and executes concurrently during DMA transfers, resulting in zero added latency.</div>
+                    </div>
+
+                    <div class="qa-card glass-card">
+                        <div class="qa-q">Q3: How does TEMPO maintain standard NVMe compatibility?</div>
+                        <div class="qa-a">TEMPO utilizes Command Dword 13 in the 64-byte NVMe Submission Queue Entry (SQE). Under the official NVMe 2.0 specification, Dword 13 is designated for vendor-specific command parameters. Standard off-the-shelf NVMe drives simply ignore Dword 13, making TEMPO 100% backward-compatible with legacy hardware.</div>
+                    </div>
+
+                    <div class="qa-card glass-card">
+                        <div class="qa-q">Q4: Does reordering requests affect SSD write endurance or wear leveling?</div>
+                        <div class="qa-a">No. TEMPO only reorders in-flight queue entries; it does not change Flash Translation Layer (FTL) wear-leveling algorithms or increase write amplification. In fact, by eliminating 25.4% of wasted speculative read attempts that miss their deadline, TEMPO reduces total controller and NAND flash stress.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script>

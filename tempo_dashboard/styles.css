@@ -89,12 +89,87 @@ body {
    ========================================================================== */
 .app-header {
     display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.header-main-row {
+    display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 16px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border-subtle);
+    width: 100%;
+}
+
+.tabs-nav-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle);
+    width: 100%;
+}
+
+.nav-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: var(--font-main);
+}
+
+.nav-tab:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-tab.active {
+    background: rgba(6, 182, 212, 0.15);
+    color: #A5F3FC;
+    border-color: rgba(6, 182, 212, 0.4);
+    box-shadow: 0 0 16px rgba(6, 182, 212, 0.2);
+}
+
+.tab-badge {
+    font-size: 10px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    background: rgba(16, 185, 129, 0.2);
+    color: #6EE7B7;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.tab-view {
+    display: none;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    animation: tabFadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-view.active {
+    display: flex;
+}
+
+@keyframes tabFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .logo-group {
@@ -410,7 +485,7 @@ body {
 }
 
 .queue-card {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.04);
     border: 1px solid var(--border-subtle);
     border-radius: 8px;
     padding: 10px;
@@ -418,13 +493,13 @@ body {
     flex-direction: column;
     gap: 6px;
     position: relative;
-    transition: all 0.2s ease;
-    animation: fadeIn 0.2s ease;
+    opacity: 1 !important;
+    transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-4px); }
-    to { opacity: 1; transform: translateY(0); }
+.queue-card:hover {
+    border-color: var(--accent-cyan);
+    transform: translateX(2px);
 }
 
 .queue-card.tier-critical {
@@ -946,4 +1021,609 @@ body {
     .channels-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+}
+
+/* ==========================================================================
+   Chart Box (Live Latency Chart)
+   ========================================================================== */
+.chart-box {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.chart-sub {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+#live-latency-canvas {
+    width: 100%;
+    height: 105px;
+    background: rgba(10, 15, 25, 0.6);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* ==========================================================================
+   TAB 2: Empirical Benchmarks Styles
+   ========================================================================== */
+.benchmarks-container, .architecture-container, .prototype-container, .pitch-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+.stat-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.bench-stat-card {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bsc-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.bsc-val-group {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.bsc-old {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-decoration: line-through;
+}
+
+.bsc-arrow {
+    font-size: 16px;
+    color: var(--text-secondary);
+}
+
+.bsc-new {
+    font-size: 26px;
+    font-weight: 800;
+}
+
+.bsc-stat {
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.bsc-p {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.bsc-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.bench-section {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.section-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.sh-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.bench-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+}
+
+.bench-table th {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 10px 14px;
+    color: var(--text-muted);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.bench-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.highlight-row {
+    background: rgba(6, 182, 212, 0.08);
+    border-left: 4px solid var(--accent-cyan);
+}
+
+.tag-host-blind {
+    background: rgba(100, 116, 139, 0.2);
+    color: #94A3B8;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+.tag-host-only {
+    background: rgba(245, 158, 11, 0.2);
+    color: #FCD34D;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+.tag-codesign {
+    background: rgba(6, 182, 212, 0.2);
+    color: #A5F3FC;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.badge-win {
+    background: rgba(16, 185, 129, 0.2);
+    color: #6EE7B7;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.bench-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.bench-sub-card {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.card-title-group h4 {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.card-caption {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.crossover-explanation {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+}
+
+.ce-point {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.ce-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+}
+
+.ce-dot.green { background: var(--color-success); box-shadow: 0 0 6px var(--color-success); }
+.ce-dot.yellow { background: var(--color-normal); }
+.ce-dot.red { background: var(--color-critical); box-shadow: 0 0 6px var(--color-critical); }
+
+.energy-breakdown-box {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.energy-kpi {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+}
+
+.ek-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ek-label {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.ek-val {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.energy-bar-comparison {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.eb-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+}
+
+.eb-name {
+    width: 110px;
+    color: var(--text-secondary);
+}
+
+.eb-bar-track {
+    flex: 1;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.eb-bar-fill {
+    height: 100%;
+    border-radius: 5px;
+}
+
+.eb-bar-fill.s1 { background: var(--color-critical); }
+.eb-bar-fill.s3 { background: var(--color-success); }
+
+.eb-num {
+    width: 60px;
+    text-align: right;
+    font-weight: 700;
+}
+
+.energy-note {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 10px;
+    border-radius: 6px;
+}
+
+/* ==========================================================================
+   TAB 3: Co-Design Architecture Styles
+   ========================================================================== */
+.flow-steps-grid {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}
+
+.flow-step-box {
+    flex: 1;
+    min-width: 180px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+}
+
+.flow-step-box.highlight-box {
+    border-color: var(--accent-cyan);
+    background: rgba(6, 182, 212, 0.08);
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.15);
+}
+
+.step-num {
+    width: 22px;
+    height: 22px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.highlight-box .step-num {
+    background: var(--accent-cyan);
+    color: #07090E;
+}
+
+.step-title {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.step-sub {
+    font-size: 11px;
+    color: var(--accent-cyan);
+    font-family: var(--font-mono);
+}
+
+.step-body {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin-top: 4px;
+}
+
+.step-body code {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 2px 4px;
+    border-radius: 3px;
+    color: #A5F3FC;
+    font-family: var(--font-mono);
+}
+
+.flow-connector {
+    display: flex;
+    align-items: center;
+    color: var(--text-muted);
+    font-size: 18px;
+}
+
+.sqe-bitfield-display {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.bitfield-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    padding: 0 4px;
+}
+
+.bitfield-blocks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.bf-block {
+    padding: 16px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border: 1px solid var(--border-subtle);
+}
+
+.bf-slack {
+    background: rgba(6, 182, 212, 0.1);
+    border-color: rgba(6, 182, 212, 0.3);
+}
+
+.bf-tier {
+    background: rgba(139, 92, 246, 0.1);
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+.bf-title {
+    font-size: 13px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+}
+
+.bf-slack .bf-title { color: #A5F3FC; }
+.bf-tier .bf-title { color: #DDD6FE; }
+
+.bf-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.bf-desc code {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 2px 4px;
+    border-radius: 3px;
+    color: white;
+    font-family: var(--font-mono);
+}
+
+/* ==========================================================================
+   TAB 4: Prototype Styles
+   ========================================================================== */
+.proto-top-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.proto-card {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.proto-results-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.pr-box {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.highlight-pr {
+    border-color: var(--color-success);
+    background: rgba(16, 185, 129, 0.08);
+}
+
+.pr-title {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.pr-stat {
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.pr-tail, .pr-cycles {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.pr-callout {
+    background: rgba(6, 182, 212, 0.1);
+    border-left: 3px solid var(--accent-cyan);
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #A5F3FC;
+}
+
+.code-snippet-box {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 14px;
+    overflow-x: auto;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #E2E8F0;
+}
+
+/* ==========================================================================
+   TAB 5: Pitch & Defense Styles
+   ========================================================================== */
+.pitch-hero-card {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: linear-gradient(135deg, rgba(17, 24, 39, 0.9) 0%, rgba(6, 182, 212, 0.1) 100%);
+    border-color: rgba(6, 182, 212, 0.3);
+}
+
+.phc-badge {
+    background: rgba(6, 182, 212, 0.2);
+    color: #A5F3FC;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    width: fit-content;
+    letter-spacing: 0.5px;
+}
+
+.phc-header h2 {
+    font-size: 22px;
+    font-weight: 800;
+    margin-top: 6px;
+}
+
+.phc-script {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #D1D5DB;
+}
+
+.phc-script strong {
+    color: #FFFFFF;
+}
+
+.judge-qa-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.qa-card {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.qa-q {
+    font-size: 13px;
+    font-weight: 700;
+    color: #FCD34D;
+    line-height: 1.4;
+}
+
+.qa-a {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.6;
 }
