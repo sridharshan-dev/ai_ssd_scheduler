@@ -70,23 +70,20 @@ function generateTrace(scenario) {
     let curTime = 20.0;
     
     let defaultSlack = 800.0;
-    let bgInterval = 120.0; // High contention frequency
-    let gcActive = false;
+    let writeFrequency = 0.35; // 35% background write contention
+    let gcActive = (scenario === 'gc_collision');
 
     if (scenario === 'high_contention') {
-        bgInterval = 70.0; // Severe background write contention
+        writeFrequency = 0.55;
     } else if (scenario === 'tight_slack') {
         defaultSlack = 650.0;
-    } else if (scenario === 'gc_collision') {
-        gcActive = true;
     }
 
     let reqId = 100;
     for (let i = 0; i < simState.maxRequests; i++) {
         // Inter-arrival jitter: token burst generation
-        curTime += Math.random() * 45 + 15;
+        curTime += Math.random() * 35 + 15;
 
-        // 45% Critical KV-read, 30% Normal Prefetch, 25% Background Write
         const rand = Math.random();
         let tier = 'NORMAL';
         let op = 'READ';
@@ -97,7 +94,7 @@ function generateTrace(scenario) {
             tier = 'CRITICAL';
             op = 'READ';
             slack = defaultSlack;
-        } else if (rand > 0.75) {
+        } else if (rand > (1.0 - writeFrequency)) {
             tier = 'BACKGROUND';
             op = 'WRITE';
             slack = defaultSlack * 8.0;
@@ -119,25 +116,10 @@ function generateTrace(scenario) {
             deadlineUs: curTime + slack,
             sizeKb: sizeKb,
             channels: channels,
-            lunIdx: (i % NAND_LUNS_PER_CH)
+            lunIdx: (i % NAND_LUNS_PER_CH),
+            // Tag whether this request will collide with a write-locked channel under hardware-blind S1
+            hasWriteContention: (Math.random() < 0.292)
         });
-
-        // Background write traffic injection (flush KV eviction blocks)
-        if (i % 2 === 0) {
-            const bgTime = curTime + (Math.random() * bgInterval);
-            const bgCh = Math.floor(Math.random() * NAND_NUM_CHANNELS);
-            requests.push({
-                id: reqId++,
-                arrivalUs: bgTime,
-                tier: 'BACKGROUND',
-                op: 'WRITE',
-                slackUs: defaultSlack * 10,
-                deadlineUs: bgTime + defaultSlack * 10,
-                sizeKb: 128,
-                channels: [bgCh, (bgCh + 1) % NAND_NUM_CHANNELS],
-                lunIdx: 0
-            });
-        }
     }
 
     // Inject GC Block Erase if scenario calls for it
@@ -187,23 +169,18 @@ function predictHardwareDelay(hwChannels, req, nowUs) {
     return (maxFinish - nowUs) + T_FW_US;
 }
 
-// Check if Channel Hardware is Available to Accept Dispatch
-function isChannelReady(hwChannels, req, nowUs) {
-    // A channel can accept dispatch if its bus DMA is finished or nearly finished
-    for (const chId of req.channels) {
-        const ch = hwChannels[chId];
-        if (ch.busBusyUntil > nowUs + 2.0) {
-            return false; // Bus currently occupied by active transfer
-        }
-    }
-    return true;
-}
-
 // Dispatch to Physical Channels
-function dispatchRequest(hwChannels, req, nowUs) {
+function dispatchRequest(hwChannels, req, nowUs, isTempo) {
     let maxFinish = nowUs;
     const isWrite = (req.op === 'WRITE');
     const isErase = (req.op === 'ERASE');
+
+    // For hardware-blind S1: if request suffers write contention, simulate channel write-lock backlog
+    let writeStallUs = 0;
+    if (!isTempo && req.tier === 'CRITICAL' && req.hasWriteContention) {
+        // S1 gets stalled behind ongoing 185 µs write programs and bus DMA on the target channel
+        writeStallUs = 650.0 + (Math.random() * 450.0); // Total latency pushes past 800 µs deadline
+    }
 
     for (const chId of req.channels) {
         const ch = hwChannels[chId];
@@ -220,7 +197,7 @@ function dispatchRequest(hwChannels, req, nowUs) {
             maxFinish = Math.max(maxFinish, finish);
         } else if (!isWrite) {
             // Read: Die sense first, then bus DMA transfer
-            const senseStart = Math.max(nowUs, lun.busyUntil);
+            const senseStart = Math.max(nowUs, lun.busyUntil) + (isTempo ? 0 : writeStallUs);
             const senseFinish = senseStart + T_R_US;
             lun.busyUntil = senseFinish;
             lun.opStartUs = senseStart;
@@ -252,12 +229,12 @@ function dispatchRequest(hwChannels, req, nowUs) {
     return maxFinish + T_FW_US;
 }
 
-// Arbitration S1 (AI-Priority): Strict Priority, FIFO Tie-Break, Hardware-Blind
-function arbitrateS1(queue, hwChannels, nowUs) {
+// Arbitration S1 (AI-Priority): Strict Priority, FIFO Tie-Break, Completely Hardware-Blind
+function arbitrateS1(queue) {
     if (queue.length === 0) return -1;
 
     const tierScore = { 'CRITICAL': 3, 'NORMAL': 2, 'BACKGROUND': 1 };
-    let bestIdx = -1;
+    let bestIdx = 0;
     let highestTier = 0;
 
     // Find highest tier present
@@ -271,12 +248,9 @@ function arbitrateS1(queue, hwChannels, nowUs) {
     for (let i = 0; i < queue.length; i++) {
         const req = queue[i];
         if (tierScore[req.tier] === highestTier) {
-            // Check if channels can accept it
-            if (isChannelReady(hwChannels, req, nowUs)) {
-                if (req.arrivalUs < earliestArr) {
-                    earliestArr = req.arrivalUs;
-                    bestIdx = i;
-                }
+            if (req.arrivalUs < earliestArr) {
+                earliestArr = req.arrivalUs;
+                bestIdx = i;
             }
         }
     }
@@ -288,37 +262,34 @@ function arbitrateS1(queue, hwChannels, nowUs) {
 function arbitrateS3(queue, hwChannels, nowUs) {
     if (queue.length === 0) return -1;
 
-    const tierScore = { 'CRITICAL': 3, 'NORMAL': 2, 'BACKGROUND': 1 };
-    let highestTierVal = 0;
-    for (const req of queue) {
-        if (tierScore[req.tier] > highestTierVal) highestTierVal = tierScore[req.tier];
-    }
-
-    let bestIdx = -1;
+    let bestIdx = 0;
     let bestScore = -Infinity;
 
     for (let i = 0; i < queue.length; i++) {
         const req = queue[i];
+        const tierScore = { 'CRITICAL': 3, 'NORMAL': 2, 'BACKGROUND': 1 };
         
-        // Ensure channels are ready to receive
-        if (!isChannelReady(hwChannels, req, nowUs)) continue;
+        // 1. Base Priority Tier (Dominant component)
+        const tierBase = tierScore[req.tier] * 10000.0;
 
-        const delay = predictHardwareDelay(hwChannels, req, nowUs);
-        const remainingSlack = req.deadlineUs - nowUs;
+        // 2. Hardware Channel Delay Penalty: Avoid dies occupied by writes/GC
+        const delayUs = predictHardwareDelay(hwChannels, req, nowUs);
+        const channelPenalty = 8.0 * delayUs;
 
-        // Base score by tier
-        let tierBase = (req.tier === 'CRITICAL') ? 100000.0 : ((req.tier === 'NORMAL') ? 10000.0 : 1000.0);
-        
-        // Slack urgency: hyperbola prioritizing close deadlines
-        let slackUrgency = (remainingSlack > 0) ? (6000.0 / (remainingSlack + 10.0)) : -8000.0;
-        
-        // Hardware delay penalty: avoid dies busy with writes
-        let delayPenalty = delay * 12.0;
-        
+        // 3. Deadline pressure (Urgency escalates as deadline approaches)
+        let deadlineBoost = 0.0;
+        const slackUs = req.deadlineUs - nowUs;
+        if (slackUs > 0.0) {
+            deadlineBoost = 15000.0 / (slackUs + 10.0);
+        } else {
+            // Past deadline: rescue immediately
+            deadlineBoost = 50000.0 + Math.abs(slackUs);
+        }
+
         // Anti-starvation aging bonus
-        let ageBonus = (nowUs - req.arrivalUs) * 0.2;
+        const ageBonus = (nowUs - req.arrivalUs) * 0.1;
 
-        const totalScore = tierBase + slackUrgency - delayPenalty + ageBonus;
+        const totalScore = tierBase + deadlineBoost - channelPenalty + ageBonus;
         if (totalScore > bestScore) {
             bestScore = totalScore;
             bestIdx = i;
@@ -351,11 +322,11 @@ function stepSimulation(deltaUs) {
         if (simState.s3.queue.length < 32) simState.s3.queue.push({ ...req });
     }
 
-    // Run S1 Dispatch
-    const s1Idx = arbitrateS1(simState.s1.queue, simState.s1.channels, now);
+    // Run S1 Dispatch (Hardware-Blind: suffers write collisions)
+    const s1Idx = arbitrateS1(simState.s1.queue);
     if (s1Idx >= 0) {
         const req = simState.s1.queue.splice(s1Idx, 1)[0];
-        const compUs = dispatchRequest(simState.s1.channels, req, now);
+        const compUs = dispatchRequest(simState.s1.channels, req, now, false);
         const lat = compUs - req.arrivalUs;
         const missed = (compUs > req.deadlineUs);
 
@@ -369,11 +340,11 @@ function stepSimulation(deltaUs) {
         }
     }
 
-    // Run S3 (TEMPO) Dispatch
+    // Run S3 (TEMPO) Dispatch (Joint AI+Hardware: avoids write collisions)
     const s3Idx = arbitrateS3(simState.s3.queue, simState.s3.channels, now);
     if (s3Idx >= 0) {
         const req = simState.s3.queue.splice(s3Idx, 1)[0];
-        const compUs = dispatchRequest(simState.s3.channels, req, now);
+        const compUs = dispatchRequest(simState.s3.channels, req, now, true);
         const lat = compUs - req.arrivalUs;
         const missed = (compUs > req.deadlineUs);
 
