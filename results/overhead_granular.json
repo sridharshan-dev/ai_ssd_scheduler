@@ -1,0 +1,35 @@
+[
+  {
+    "queue_depth": 8,
+    "avg_candidates": 94.4,
+    "avg_sram_reads": 753.9,
+    "python_urgency_math_us": 60.758,
+    "python_delay_predict_us": 474.74,
+    "python_total_decision_us": 636.564,
+    "arm_cortex_r8_cycles": 5228,
+    "arm_cortex_r8_us": 6.535,
+    "overhead_pct_of_nand_read": 8.49
+  },
+  {
+    "queue_depth": 16,
+    "avg_candidates": 80.3,
+    "avg_sram_reads": 642.0,
+    "python_urgency_math_us": 50.931,
+    "python_delay_predict_us": 414.581,
+    "python_total_decision_us": 554.116,
+    "arm_cortex_r8_cycles": 4453,
+    "arm_cortex_r8_us": 5.566,
+    "overhead_pct_of_nand_read": 7.23
+  },
+  {
+    "queue_depth": 32,
+    "avg_candidates": 70.0,
+    "avg_sram_reads": 559.8,
+    "python_urgency_math_us": 43.925,
+    "python_delay_predict_us": 354.59,
+    "python_total_decision_us": 472.388,
+    "arm_cortex_r8_cycles": 3884,
+    "arm_cortex_r8_us": 4.855,
+    "overhead_pct_of_nand_read": 6.31
+  }
+]

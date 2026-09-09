@@ -1,0 +1,1157 @@
+[
+  {
+    "case_number": 1,
+    "simulation_time_us": 6265.9,
+    "queue_depth": 2,
+    "s1_choice_req_A": {
+      "id": 213,
+      "priority": "NORMAL",
+      "arrival_us": 6258.2,
+      "deadline_us": 11258.2,
+      "slack_us": 4992.3,
+      "target_channels": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "target_luns": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 0 Programming until 7089.1 us",
+      "predicted_delay_us": 1300.7
+    },
+    "s3_choice_req_B": {
+      "id": 214,
+      "priority": "NORMAL",
+      "arrival_us": 6263.9,
+      "deadline_us": 11263.9,
+      "slack_us": 4998.0,
+      "target_channels": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "target_luns": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 1 Programming until 7269.2 us",
+      "predicted_delay_us": 1115.7
+    },
+    "s1_outcome": {
+      "req_selected": {
+        "id": 213,
+        "completed": 7566.607000000001,
+        "latency": 1308.4460000000008,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 214,
+        "completed": 7422.567000000001,
+        "latency": 1158.6980000000012,
+        "met_deadline": true
+      }
+    },
+    "s3_outcome": {
+      "req_selected": {
+        "id": 214,
+        "completed": 7381.607000000001,
+        "latency": 1117.7380000000012,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 213,
+        "completed": 7730.447000000001,
+        "latency": 1472.286000000001,
+        "met_deadline": true
+      }
+    }
+  },
+  {
+    "case_number": 2,
+    "simulation_time_us": 6297.8,
+    "queue_depth": 7,
+    "s1_choice_req_A": {
+      "id": 213,
+      "priority": "NORMAL",
+      "arrival_us": 6258.2,
+      "deadline_us": 11258.2,
+      "slack_us": 4960.4,
+      "target_channels": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "target_luns": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 0 Programming until 7089.1 us",
+      "predicted_delay_us": 1309.8
+    },
+    "s3_choice_req_B": {
+      "id": 216,
+      "priority": "NORMAL",
+      "arrival_us": 6273.8,
+      "deadline_us": 11273.8,
+      "slack_us": 4976.0,
+      "target_channels": [
+        7,
+        0,
+        1,
+        2
+      ],
+      "target_luns": [
+        0,
+        1,
+        1,
+        1
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 0 Programming until 7130.9 us",
+      "predicted_delay_us": 1104.4
+    },
+    "s1_outcome": {
+      "req_selected": {
+        "id": 213,
+        "completed": 7566.607000000001,
+        "latency": 1308.4460000000008,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 216,
+        "completed": 7623.241000000002,
+        "latency": 1349.4770000000017,
+        "met_deadline": true
+      }
+    },
+    "s3_outcome": {
+      "req_selected": {
+        "id": 216,
+        "completed": 7402.241000000002,
+        "latency": 1128.4770000000017,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 213,
+        "completed": 7730.447000000001,
+        "latency": 1472.286000000001,
+        "met_deadline": true
+      }
+    }
+  },
+  {
+    "case_number": 3,
+    "simulation_time_us": 6317.7,
+    "queue_depth": 6,
+    "s1_choice_req_A": {
+      "id": 213,
+      "priority": "NORMAL",
+      "arrival_us": 6258.2,
+      "deadline_us": 11258.2,
+      "slack_us": 4940.5,
+      "target_channels": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "target_luns": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 0 Programming until 7089.1 us",
+      "predicted_delay_us": 1310.5
+    },
+    "s3_choice_req_B": {
+      "id": 215,
+      "priority": "NORMAL",
+      "arrival_us": 6267.5,
+      "deadline_us": 11267.5,
+      "slack_us": 4949.8,
+      "target_channels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "target_luns": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 1 Programming until 6979.8 us",
+      "predicted_delay_us": 1153.6
+    },
+    "s1_outcome": {
+      "req_selected": {
+        "id": 213,
+        "completed": 7566.607000000001,
+        "latency": 1308.4460000000008,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 215,
+        "completed": 7430.306000000001,
+        "latency": 1162.7880000000014,
+        "met_deadline": true
+      }
+    },
+    "s3_outcome": {
+      "req_selected": {
+        "id": 215,
+        "completed": 7471.266000000001,
+        "latency": 1203.7480000000014,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 213,
+        "completed": 7730.447000000001,
+        "latency": 1472.286000000001,
+        "met_deadline": true
+      }
+    }
+  },
+  {
+    "case_number": 4,
+    "simulation_time_us": 6358.7,
+    "queue_depth": 5,
+    "s1_choice_req_A": {
+      "id": 213,
+      "priority": "NORMAL",
+      "arrival_us": 6258.2,
+      "deadline_us": 11258.2,
+      "slack_us": 4899.5,
+      "target_channels": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "target_luns": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 0 Programming until 7089.1 us",
+      "predicted_delay_us": 1269.6
+    },
+    "s3_choice_req_B": {
+      "id": 218,
+      "priority": "NORMAL",
+      "arrival_us": 6284.3,
+      "deadline_us": 11284.3,
+      "slack_us": 4925.7,
+      "target_channels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "target_luns": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 0 Programming until 7246.7 us",
+      "predicted_delay_us": 1215.7
+    },
+    "s1_outcome": {
+      "req_selected": {
+        "id": 213,
+        "completed": 7566.607000000001,
+        "latency": 1308.4460000000008,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 218,
+        "completed": 7733.2260000000015,
+        "latency": 1448.9090000000015,
+        "met_deadline": true
+      }
+    },
+    "s3_outcome": {
+      "req_selected": {
+        "id": 218,
+        "completed": 7574.346000000001,
+        "latency": 1290.0290000000014,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 213,
+        "completed": 7730.447000000001,
+        "latency": 1472.286000000001,
+        "met_deadline": true
+      }
+    }
+  },
+  {
+    "case_number": 5,
+    "simulation_time_us": 6420.7,
+    "queue_depth": 6,
+    "s1_choice_req_A": {
+      "id": 213,
+      "priority": "NORMAL",
+      "arrival_us": 6258.2,
+      "deadline_us": 11258.2,
+      "slack_us": 4837.5,
+      "target_channels": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "target_luns": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 0 Programming until 7089.1 us",
+      "predicted_delay_us": 1261.3
+    },
+    "s3_choice_req_B": {
+      "id": 221,
+      "priority": "NORMAL",
+      "arrival_us": 6362.2,
+      "deadline_us": 11362.2,
+      "slack_us": 4941.5,
+      "target_channels": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "target_luns": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 0 Programming until 7543.8 us",
+      "predicted_delay_us": 1230.6
+    },
+    "s1_outcome": {
+      "req_selected": {
+        "id": 213,
+        "completed": 7566.607000000001,
+        "latency": 1308.4460000000008,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 221,
+        "completed": 7881.810000000002,
+        "latency": 1519.586000000002,
+        "met_deadline": true
+      }
+    },
+    "s3_outcome": {
+      "req_selected": {
+        "id": 221,
+        "completed": 7651.306000000001,
+        "latency": 1289.0820000000012,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 213,
+        "completed": 7730.447000000001,
+        "latency": 1472.286000000001,
+        "met_deadline": true
+      }
+    }
+  },
+  {
+    "case_number": 6,
+    "simulation_time_us": 6429.7,
+    "queue_depth": 5,
+    "s1_choice_req_A": {
+      "id": 213,
+      "priority": "NORMAL",
+      "arrival_us": 6258.2,
+      "deadline_us": 11258.2,
+      "slack_us": 4828.5,
+      "target_channels": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "target_luns": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 0 Programming until 7125.1 us",
+      "predicted_delay_us": 1293.2
+    },
+    "s3_choice_req_B": {
+      "id": 222,
+      "priority": "NORMAL",
+      "arrival_us": 6362.4,
+      "deadline_us": 11362.4,
+      "slack_us": 4932.7,
+      "target_channels": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_luns": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 0 Programming until 7319.1 us",
+      "predicted_delay_us": 1262.6
+    },
+    "s1_outcome": {
+      "req_selected": {
+        "id": 213,
+        "completed": 7566.607000000001,
+        "latency": 1308.4460000000008,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 222,
+        "completed": 7869.527000000001,
+        "latency": 1507.0890000000009,
+        "met_deadline": true
+      }
+    },
+    "s3_outcome": {
+      "req_selected": {
+        "id": 222,
+        "completed": 7692.266000000001,
+        "latency": 1329.8280000000013,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 213,
+        "completed": 7730.447000000001,
+        "latency": 1472.286000000001,
+        "met_deadline": true
+      }
+    }
+  },
+  {
+    "case_number": 7,
+    "simulation_time_us": 6522.5,
+    "queue_depth": 6,
+    "s1_choice_req_A": {
+      "id": 217,
+      "priority": "NORMAL",
+      "arrival_us": 6277.0,
+      "deadline_us": 11277.0,
+      "slack_us": 4754.5,
+      "target_channels": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "target_luns": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 1 Programming until 7341.2 us",
+      "predicted_delay_us": 1503.4
+    },
+    "s3_choice_req_B": {
+      "id": 227,
+      "priority": "NORMAL",
+      "arrival_us": 6475.0,
+      "deadline_us": 11475.0,
+      "slack_us": 4952.5,
+      "target_channels": [
+        6,
+        7,
+        0,
+        1
+      ],
+      "target_luns": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 0 Programming until 7664.3 us",
+      "predicted_delay_us": 1305.6
+    },
+    "s1_outcome": {
+      "req_selected": {
+        "id": 217,
+        "completed": 7890.161000000002,
+        "latency": 1613.1380000000017,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 227,
+        "completed": 8090.001000000002,
+        "latency": 1615.0200000000023,
+        "met_deadline": true
+      }
+    },
+    "s3_outcome": {
+      "req_selected": {
+        "id": 227,
+        "completed": 7828.041000000002,
+        "latency": 1353.0600000000022,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 217,
+        "completed": 12129.366999999922,
+        "latency": 5852.343999999922,
+        "met_deadline": false
+      }
+    }
+  },
+  {
+    "case_number": 8,
+    "simulation_time_us": 6552.6,
+    "queue_depth": 6,
+    "s1_choice_req_A": {
+      "id": 217,
+      "priority": "NORMAL",
+      "arrival_us": 6277.0,
+      "deadline_us": 11277.0,
+      "slack_us": 4724.4,
+      "target_channels": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "target_luns": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 1 Programming until 7341.2 us",
+      "predicted_delay_us": 1501.4
+    },
+    "s3_choice_req_B": {
+      "id": 229,
+      "priority": "NORMAL",
+      "arrival_us": 6515.5,
+      "deadline_us": 11515.5,
+      "slack_us": 4962.9,
+      "target_channels": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "target_luns": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 1 Programming until 7435.8 us",
+      "predicted_delay_us": 1288.3
+    },
+    "s1_outcome": {
+      "req_selected": {
+        "id": 217,
+        "completed": 7890.161000000002,
+        "latency": 1613.1380000000017,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 229,
+        "completed": 7963.730000000002,
+        "latency": 1448.233000000002,
+        "met_deadline": true
+      }
+    },
+    "s3_outcome": {
+      "req_selected": {
+        "id": 229,
+        "completed": 7840.850000000002,
+        "latency": 1325.3530000000019,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 217,
+        "completed": 12129.366999999922,
+        "latency": 5852.343999999922,
+        "met_deadline": false
+      }
+    }
+  },
+  {
+    "case_number": 9,
+    "simulation_time_us": 6563.5,
+    "queue_depth": 5,
+    "s1_choice_req_A": {
+      "id": 217,
+      "priority": "NORMAL",
+      "arrival_us": 6277.0,
+      "deadline_us": 11277.0,
+      "slack_us": 4713.6,
+      "target_channels": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "target_luns": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 1 Programming until 7377.2 us",
+      "predicted_delay_us": 1503.4
+    },
+    "s3_choice_req_B": {
+      "id": 228,
+      "priority": "NORMAL",
+      "arrival_us": 6483.3,
+      "deadline_us": 11483.3,
+      "slack_us": 4919.9,
+      "target_channels": [
+        7,
+        0,
+        1,
+        2
+      ],
+      "target_luns": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 1 Programming until 7320.9 us",
+      "predicted_delay_us": 1305.6
+    },
+    "s1_outcome": {
+      "req_selected": {
+        "id": 217,
+        "completed": 7890.161000000002,
+        "latency": 1613.1380000000017,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 228,
+        "completed": 8130.961000000002,
+        "latency": 1647.6200000000017,
+        "met_deadline": true
+      }
+    },
+    "s3_outcome": {
+      "req_selected": {
+        "id": 228,
+        "completed": 7869.001000000002,
+        "latency": 1385.6600000000017,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 217,
+        "completed": 12129.366999999922,
+        "latency": 5852.343999999922,
+        "met_deadline": false
+      }
+    }
+  },
+  {
+    "case_number": 10,
+    "simulation_time_us": 6593.5,
+    "queue_depth": 6,
+    "s1_choice_req_A": {
+      "id": 217,
+      "priority": "NORMAL",
+      "arrival_us": 6277.0,
+      "deadline_us": 11277.0,
+      "slack_us": 4683.5,
+      "target_channels": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "target_luns": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 1 Programming until 7377.2 us",
+      "predicted_delay_us": 1501.4
+    },
+    "s3_choice_req_B": {
+      "id": 230,
+      "priority": "NORMAL",
+      "arrival_us": 6552.4,
+      "deadline_us": 11552.4,
+      "slack_us": 4958.8,
+      "target_channels": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "target_luns": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 1 Programming until 7476.8 us",
+      "predicted_delay_us": 1288.3
+    },
+    "s1_outcome": {
+      "req_selected": {
+        "id": 217,
+        "completed": 7890.161000000002,
+        "latency": 1613.1380000000017,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 230,
+        "completed": 9262.16699999998,
+        "latency": 2709.7869999999793,
+        "met_deadline": true
+      }
+    },
+    "s3_outcome": {
+      "req_selected": {
+        "id": 230,
+        "completed": 7881.810000000002,
+        "latency": 1329.430000000002,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 217,
+        "completed": 12129.366999999922,
+        "latency": 5852.343999999922,
+        "met_deadline": false
+      }
+    }
+  },
+  {
+    "case_number": 11,
+    "simulation_time_us": 6634.5,
+    "queue_depth": 5,
+    "s1_choice_req_A": {
+      "id": 217,
+      "priority": "NORMAL",
+      "arrival_us": 6277.0,
+      "deadline_us": 11277.0,
+      "slack_us": 4642.5,
+      "target_channels": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "target_luns": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 1 Programming until 7413.2 us",
+      "predicted_delay_us": 1514.2
+    },
+    "s3_choice_req_B": {
+      "id": 231,
+      "priority": "NORMAL",
+      "arrival_us": 6566.7,
+      "deadline_us": 11566.7,
+      "slack_us": 4932.2,
+      "target_channels": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "target_luns": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 1 Programming until 7507.8 us",
+      "predicted_delay_us": 1329.2
+    },
+    "s1_outcome": {
+      "req_selected": {
+        "id": 217,
+        "completed": 7890.161000000002,
+        "latency": 1613.1380000000017,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 231,
+        "completed": 9303.126999999979,
+        "latency": 2736.4339999999784,
+        "met_deadline": true
+      }
+    },
+    "s3_outcome": {
+      "req_selected": {
+        "id": 231,
+        "completed": 7963.730000000002,
+        "latency": 1397.037000000002,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 217,
+        "completed": 12129.366999999922,
+        "latency": 5852.343999999922,
+        "met_deadline": false
+      }
+    }
+  },
+  {
+    "case_number": 12,
+    "simulation_time_us": 6645.4,
+    "queue_depth": 4,
+    "s1_choice_req_A": {
+      "id": 217,
+      "priority": "NORMAL",
+      "arrival_us": 6277.0,
+      "deadline_us": 11277.0,
+      "slack_us": 4631.7,
+      "target_channels": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "target_luns": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 1 Programming until 7449.2 us",
+      "predicted_delay_us": 1544.3
+    },
+    "s3_choice_req_B": {
+      "id": 232,
+      "priority": "NORMAL",
+      "arrival_us": 6572.6,
+      "deadline_us": 11572.6,
+      "slack_us": 4927.2,
+      "target_channels": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "target_luns": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 1 Programming until 7512.8 us",
+      "predicted_delay_us": 1359.3
+    },
+    "s1_outcome": {
+      "req_selected": {
+        "id": 217,
+        "completed": 7890.161000000002,
+        "latency": 1613.1380000000017,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 232,
+        "completed": 9344.086999999978,
+        "latency": 2771.525999999978,
+        "met_deadline": true
+      }
+    },
+    "s3_outcome": {
+      "req_selected": {
+        "id": 232,
+        "completed": 8004.690000000002,
+        "latency": 1432.1290000000026,
+        "met_deadline": true
+      },
+      "req_delayed": {
+        "id": 217,
+        "completed": 12129.366999999922,
+        "latency": 5852.343999999922,
+        "met_deadline": false
+      }
+    }
+  },
+  {
+    "case_number": 13,
+    "simulation_time_us": 6989.3,
+    "queue_depth": 18,
+    "s1_choice_req_A": {
+      "id": 245,
+      "priority": "CRITICAL",
+      "arrival_us": 6847.7,
+      "deadline_us": 7647.7,
+      "slack_us": 658.5,
+      "target_channels": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "target_luns": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 1 Programming until 7579.8 us",
+      "predicted_delay_us": 1138.3
+    },
+    "s3_choice_req_B": {
+      "id": 253,
+      "priority": "CRITICAL",
+      "arrival_us": 6985.5,
+      "deadline_us": 7785.5,
+      "slack_us": 796.2,
+      "target_channels": [
+        6,
+        7,
+        0,
+        1
+      ],
+      "target_luns": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 0 Programming until 7736.3 us",
+      "predicted_delay_us": 1043.6
+    },
+    "s1_outcome": {
+      "req_selected": {
+        "id": 245,
+        "completed": 8086.610000000002,
+        "latency": 1238.8970000000027,
+        "met_deadline": false
+      },
+      "req_delayed": {
+        "id": 253,
+        "completed": 8294.801000000001,
+        "latency": 1309.3380000000016,
+        "met_deadline": false
+      }
+    },
+    "s3_outcome": {
+      "req_selected": {
+        "id": 253,
+        "completed": 8032.841000000002,
+        "latency": 1047.3780000000024,
+        "met_deadline": false
+      },
+      "req_delayed": {
+        "id": 245,
+        "completed": 8127.570000000002,
+        "latency": 1279.8570000000027,
+        "met_deadline": false
+      }
+    }
+  },
+  {
+    "case_number": 14,
+    "simulation_time_us": 7017.4,
+    "queue_depth": 19,
+    "s1_choice_req_A": {
+      "id": 245,
+      "priority": "CRITICAL",
+      "arrival_us": 6847.7,
+      "deadline_us": 7647.7,
+      "slack_us": 630.3,
+      "target_channels": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "target_luns": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 1 Programming until 7579.8 us",
+      "predicted_delay_us": 1110.2
+    },
+    "s3_choice_req_B": {
+      "id": 255,
+      "priority": "CRITICAL",
+      "arrival_us": 7015.8,
+      "deadline_us": 7815.8,
+      "slack_us": 798.4,
+      "target_channels": [
+        7,
+        0,
+        1,
+        2
+      ],
+      "target_luns": [
+        0,
+        1,
+        1,
+        1
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 0 Programming until 7782.7 us",
+      "predicted_delay_us": 1056.4
+    },
+    "s1_outcome": {
+      "req_selected": {
+        "id": 245,
+        "completed": 8086.610000000002,
+        "latency": 1238.8970000000027,
+        "met_deadline": false
+      },
+      "req_delayed": {
+        "id": 255,
+        "completed": 8376.721,
+        "latency": 1360.933,
+        "met_deadline": false
+      }
+    },
+    "s3_outcome": {
+      "req_selected": {
+        "id": 255,
+        "completed": 8073.801000000002,
+        "latency": 1058.0130000000026,
+        "met_deadline": false
+      },
+      "req_delayed": {
+        "id": 245,
+        "completed": 8127.570000000002,
+        "latency": 1279.8570000000027,
+        "met_deadline": false
+      }
+    }
+  },
+  {
+    "case_number": 15,
+    "simulation_time_us": 7078.7,
+    "queue_depth": 21,
+    "s1_choice_req_A": {
+      "id": 245,
+      "priority": "CRITICAL",
+      "arrival_us": 6847.7,
+      "deadline_us": 7647.7,
+      "slack_us": 569.0,
+      "target_channels": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "target_luns": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 1 Programming until 7579.8 us",
+      "predicted_delay_us": 1048.9
+    },
+    "s3_choice_req_B": {
+      "id": 256,
+      "priority": "CRITICAL",
+      "arrival_us": 7025.9,
+      "deadline_us": 7825.9,
+      "slack_us": 747.2,
+      "target_channels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "target_luns": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "hardware_ready": false,
+      "blocking_reason": "LUN 0 Programming until 7611.7 us",
+      "predicted_delay_us": 1023.2
+    },
+    "s1_outcome": {
+      "req_selected": {
+        "id": 245,
+        "completed": 8086.610000000002,
+        "latency": 1238.8970000000027,
+        "met_deadline": false
+      },
+      "req_delayed": {
+        "id": 256,
+        "completed": 8148.6460000000025,
+        "latency": 1122.7470000000021,
+        "met_deadline": false
+      }
+    },
+    "s3_outcome": {
+      "req_selected": {
+        "id": 256,
+        "completed": 8101.866000000002,
+        "latency": 1075.9670000000015,
+        "met_deadline": false
+      },
+      "req_delayed": {
+        "id": 245,
+        "completed": 8127.570000000002,
+        "latency": 1279.8570000000027,
+        "met_deadline": false
+      }
+    }
+  }
+]

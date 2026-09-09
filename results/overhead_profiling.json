@@ -1,0 +1,72 @@
+[
+  {
+    "queue_depth": 1,
+    "avg_candidates_examined": 402.28,
+    "avg_state_lookups": 3206.77,
+    "python_mean_us": 2224.434,
+    "python_p99_us": 5549.637,
+    "arm_cortex_r8_cycles": 25383,
+    "arm_cortex_r8_us": 31.729,
+    "overhead_pct_of_nand_read": 41.23
+  },
+  {
+    "queue_depth": 2,
+    "avg_candidates_examined": 316.47,
+    "avg_state_lookups": 2522.99,
+    "python_mean_us": 1797.304,
+    "python_p99_us": 5398.102,
+    "arm_cortex_r8_cycles": 19977,
+    "arm_cortex_r8_us": 24.971,
+    "overhead_pct_of_nand_read": 32.45
+  },
+  {
+    "queue_depth": 4,
+    "avg_candidates_examined": 191.62,
+    "avg_state_lookups": 1527.74,
+    "python_mean_us": 1168.317,
+    "python_p99_us": 3345.589,
+    "arm_cortex_r8_cycles": 12111,
+    "arm_cortex_r8_us": 15.139,
+    "overhead_pct_of_nand_read": 19.67
+  },
+  {
+    "queue_depth": 8,
+    "avg_candidates_examined": 94.42,
+    "avg_state_lookups": 753.93,
+    "python_mean_us": 528.1,
+    "python_p99_us": 1616.684,
+    "arm_cortex_r8_cycles": 5988,
+    "arm_cortex_r8_us": 7.485,
+    "overhead_pct_of_nand_read": 9.73
+  },
+  {
+    "queue_depth": 16,
+    "avg_candidates_examined": 80.34,
+    "avg_state_lookups": 642.0,
+    "python_mean_us": 439.925,
+    "python_p99_us": 1434.416,
+    "arm_cortex_r8_cycles": 5101,
+    "arm_cortex_r8_us": 6.376,
+    "overhead_pct_of_nand_read": 8.29
+  },
+  {
+    "queue_depth": 32,
+    "avg_candidates_examined": 70.0,
+    "avg_state_lookups": 559.75,
+    "python_mean_us": 402.214,
+    "python_p99_us": 1338.504,
+    "arm_cortex_r8_cycles": 4449,
+    "arm_cortex_r8_us": 5.561,
+    "overhead_pct_of_nand_read": 7.23
+  },
+  {
+    "queue_depth": 64,
+    "avg_candidates_examined": 55.06,
+    "avg_state_lookups": 440.38,
+    "python_mean_us": 320.359,
+    "python_p99_us": 1121.724,
+    "arm_cortex_r8_cycles": 3508,
+    "arm_cortex_r8_us": 4.385,
+    "overhead_pct_of_nand_read": 5.7
+  }
+]

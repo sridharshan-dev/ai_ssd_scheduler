@@ -1,0 +1,128 @@
+[
+  {
+    "slack_us": 500.0,
+    "s1_miss_pct": 79.7,
+    "s3_miss_pct": 89.43,
+    "delta_miss": -9.73,
+    "s1_p95_us": 1347.4,
+    "s3_p95_us": 842.3,
+    "regime": "Physical Floor (S3 ~ S1)"
+  },
+  {
+    "slack_us": 600.0,
+    "s1_miss_pct": 65.1,
+    "s3_miss_pct": 87.42,
+    "delta_miss": -22.32,
+    "s1_p95_us": 1347.4,
+    "s3_p95_us": 842.3,
+    "regime": "Physical Floor (S3 ~ S1)"
+  },
+  {
+    "slack_us": 700.0,
+    "s1_miss_pct": 50.34,
+    "s3_miss_pct": 32.21,
+    "delta_miss": 18.12,
+    "s1_p95_us": 1347.4,
+    "s3_p95_us": 842.3,
+    "regime": "Peak Advantage (S3 >> S1)"
+  },
+  {
+    "slack_us": 800.0,
+    "s1_miss_pct": 29.19,
+    "s3_miss_pct": 5.87,
+    "delta_miss": 23.32,
+    "s1_p95_us": 1347.4,
+    "s3_p95_us": 842.3,
+    "regime": "Peak Advantage (S3 >> S1)"
+  },
+  {
+    "slack_us": 900.0,
+    "s1_miss_pct": 12.08,
+    "s3_miss_pct": 4.19,
+    "delta_miss": 7.89,
+    "s1_p95_us": 1347.4,
+    "s3_p95_us": 842.3,
+    "regime": "Peak Advantage (S3 >> S1)"
+  },
+  {
+    "slack_us": 1000.0,
+    "s1_miss_pct": 8.56,
+    "s3_miss_pct": 3.52,
+    "delta_miss": 5.03,
+    "s1_p95_us": 1347.4,
+    "s3_p95_us": 842.3,
+    "regime": "Tail Smoothing (S3 > S1)"
+  },
+  {
+    "slack_us": 1100.0,
+    "s1_miss_pct": 7.89,
+    "s3_miss_pct": 2.85,
+    "delta_miss": 5.03,
+    "s1_p95_us": 1347.4,
+    "s3_p95_us": 842.3,
+    "regime": "Tail Smoothing (S3 > S1)"
+  },
+  {
+    "slack_us": 1200.0,
+    "s1_miss_pct": 6.71,
+    "s3_miss_pct": 2.01,
+    "delta_miss": 4.7,
+    "s1_p95_us": 1347.4,
+    "s3_p95_us": 842.3,
+    "regime": "Tail Smoothing (S3 > S1)"
+  },
+  {
+    "slack_us": 1300.0,
+    "s1_miss_pct": 5.7,
+    "s3_miss_pct": 0.5,
+    "delta_miss": 5.2,
+    "s1_p95_us": 1347.4,
+    "s3_p95_us": 842.3,
+    "regime": "Tail Smoothing (S3 > S1)"
+  },
+  {
+    "slack_us": 1400.0,
+    "s1_miss_pct": 3.69,
+    "s3_miss_pct": 0.17,
+    "delta_miss": 3.52,
+    "s1_p95_us": 1347.4,
+    "s3_p95_us": 842.3,
+    "regime": "Tail Smoothing (S3 > S1)"
+  },
+  {
+    "slack_us": 1500.0,
+    "s1_miss_pct": 1.34,
+    "s3_miss_pct": 0.0,
+    "delta_miss": 1.34,
+    "s1_p95_us": 1347.4,
+    "s3_p95_us": 842.3,
+    "regime": "Slack Parity (S3 ~ S1)"
+  },
+  {
+    "slack_us": 1600.0,
+    "s1_miss_pct": 0.0,
+    "s3_miss_pct": 0.0,
+    "delta_miss": 0.0,
+    "s1_p95_us": 1347.4,
+    "s3_p95_us": 842.3,
+    "regime": "Slack Parity (S3 ~ S1)"
+  },
+  {
+    "slack_us": 1800.0,
+    "s1_miss_pct": 0.0,
+    "s3_miss_pct": 0.0,
+    "delta_miss": 0.0,
+    "s1_p95_us": 1347.4,
+    "s3_p95_us": 842.3,
+    "regime": "Slack Parity (S3 ~ S1)"
+  },
+  {
+    "slack_us": 2000.0,
+    "s1_miss_pct": 0.0,
+    "s3_miss_pct": 0.0,
+    "delta_miss": 0.0,
+    "s1_p95_us": 1347.4,
+    "s3_p95_us": 841.0,
+    "regime": "Slack Parity (S3 ~ S1)"
+  }
+]

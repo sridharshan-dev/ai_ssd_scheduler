@@ -1,0 +1,13 @@
+tracepoint:block:block_rq_issue
+{
+    @kernel_stacks[kstack()] = count();
+    @user_stacks[ustack()] = count();
+}
+
+END
+{
+    printf("Kernel Stack Traces:\n");
+    print(@kernel_stacks);
+    printf("User Stack Traces:\n");
+    print(@user_stacks);
+}

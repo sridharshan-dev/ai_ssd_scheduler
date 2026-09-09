@@ -1,0 +1,22 @@
+{
+  "sample_size": 50000,
+  "pct_128k": 97.988,
+  "read_count": 49356,
+  "read_pct": 98.712,
+  "write_count": 644,
+  "write_pct": 1.288,
+  "inter_arrival_mean_us": 56.641943238864776,
+  "inter_arrival_median_us": 15.95699999993667,
+  "inter_arrival_p95_us": 106.57310000028228,
+  "inter_arrival_p99_us": 249.73121999997971,
+  "sector_min": 1327104,
+  "sector_max": 192675776,
+  "sector_span": 191348672,
+  "op_distribution": {
+    "RA": 49355,
+    "W": 641,
+    "RM": 1,
+    "WSM": 2,
+    "WS": 1
+  }
+}

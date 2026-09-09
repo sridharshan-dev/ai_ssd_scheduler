@@ -1,0 +1,33 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# C build outputs & executables
+*.exe
+*.o
+*.obj
+*.dll
+*.dylib
+*.out
+
+# Large raw benchmark traces (> 100 MB GitHub file size limit)
+temp_cheops/results/**/*.txt
+*.txt.gz
+*.bin
+
+# Environments & IDEs
+.venv/
+venv/
+ENV/
+.env
+.vscode/
+.idea/
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store

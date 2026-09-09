@@ -1,0 +1,7 @@
+// check major and minor: ls -l /dev/nvme0n1
+
+tracepoint:block:block_rq_issue
+/args->dev == ((259 << 20) | 4)/ // Match major=259, minor=4
+{
+    printf("%llu, %s, %d, %llu, %d\n", nsecs, args->rwbs, args->bytes, args->sector, args->nr_sector);
+}

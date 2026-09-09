@@ -1,0 +1,209 @@
+[
+  {
+    "bg_iops": 0.0,
+    "s1": {
+      "miss_pct_mean": 14.26,
+      "miss_pct_std": 0.0,
+      "p50_mean": 678.4,
+      "p95_mean": 1091.6,
+      "p99_mean": 1330.0,
+      "p999_mean": 1577.3,
+      "tput_mean": 5495.2
+    },
+    "s3": {
+      "miss_pct_mean": 10.74,
+      "miss_pct_std": 0.0,
+      "p50_mean": 679.4,
+      "p95_mean": 987.4,
+      "p99_mean": 1281.2,
+      "p999_mean": 1353.9,
+      "tput_mean": 5486.5
+    },
+    "delta_miss": 3.52,
+    "p95_win_us": 104.2
+  },
+  {
+    "bg_iops": 50.0,
+    "s1": {
+      "miss_pct_mean": 14.26,
+      "miss_pct_std": 0.0,
+      "p50_mean": 678.4,
+      "p95_mean": 1091.6,
+      "p99_mean": 1330.0,
+      "p999_mean": 1577.3,
+      "tput_mean": 4984.4
+    },
+    "s3": {
+      "miss_pct_mean": 10.74,
+      "miss_pct_std": 0.0,
+      "p50_mean": 679.4,
+      "p95_mean": 987.4,
+      "p99_mean": 1281.2,
+      "p999_mean": 1353.9,
+      "tput_mean": 4979.3
+    },
+    "delta_miss": 3.52,
+    "p95_win_us": 104.2
+  },
+  {
+    "bg_iops": 100.0,
+    "s1": {
+      "miss_pct_mean": 16.24,
+      "miss_pct_std": 1.66,
+      "p50_mean": 685.1,
+      "p95_mean": 1188.1,
+      "p99_mean": 1383.0,
+      "p999_mean": 1573.7,
+      "tput_mean": 5099.4
+    },
+    "s3": {
+      "miss_pct_mean": 9.9,
+      "miss_pct_std": 2.31,
+      "p50_mean": 680.5,
+      "p95_mean": 948.9,
+      "p99_mean": 1253.4,
+      "p999_mean": 1310.0,
+      "tput_mean": 5102.4
+    },
+    "delta_miss": 6.34,
+    "p95_win_us": 239.2
+  },
+  {
+    "bg_iops": 200.0,
+    "s1": {
+      "miss_pct_mean": 14.26,
+      "miss_pct_std": 0.0,
+      "p50_mean": 678.4,
+      "p95_mean": 1091.6,
+      "p99_mean": 1330.0,
+      "p999_mean": 1577.3,
+      "tput_mean": 5216.0
+    },
+    "s3": {
+      "miss_pct_mean": 10.74,
+      "miss_pct_std": 0.0,
+      "p50_mean": 679.4,
+      "p95_mean": 987.4,
+      "p99_mean": 1281.2,
+      "p999_mean": 1353.9,
+      "tput_mean": 5208.9
+    },
+    "delta_miss": 3.52,
+    "p95_win_us": 104.2
+  },
+  {
+    "bg_iops": 300.0,
+    "s1": {
+      "miss_pct_mean": 16.61,
+      "miss_pct_std": 2.88,
+      "p50_mean": 683.9,
+      "p95_mean": 1195.1,
+      "p99_mean": 1406.4,
+      "p999_mean": 1615.9,
+      "tput_mean": 5401.2
+    },
+    "s3": {
+      "miss_pct_mean": 9.5,
+      "miss_pct_std": 1.52,
+      "p50_mean": 679.7,
+      "p95_mean": 942.5,
+      "p99_mean": 1221.5,
+      "p999_mean": 1287.6,
+      "tput_mean": 5400.6
+    },
+    "delta_miss": 7.11,
+    "p95_win_us": 252.6
+  },
+  {
+    "bg_iops": 500.0,
+    "s1": {
+      "miss_pct_mean": 18.26,
+      "miss_pct_std": 2.14,
+      "p50_mean": 684.5,
+      "p95_mean": 1285.6,
+      "p99_mean": 1455.2,
+      "p999_mean": 1576.4,
+      "tput_mean": 5410.1
+    },
+    "s3": {
+      "miss_pct_mean": 9.19,
+      "miss_pct_std": 2.96,
+      "p50_mean": 679.5,
+      "p95_mean": 955.6,
+      "p99_mean": 1248.2,
+      "p999_mean": 1350.8,
+      "tput_mean": 5427.1
+    },
+    "delta_miss": 9.06,
+    "p95_win_us": 330.0
+  },
+  {
+    "bg_iops": 800.0,
+    "s1": {
+      "miss_pct_mean": 23.49,
+      "miss_pct_std": 4.62,
+      "p50_mean": 688.2,
+      "p95_mean": 1390.8,
+      "p99_mean": 1594.6,
+      "p999_mean": 1670.3,
+      "tput_mean": 5357.7
+    },
+    "s3": {
+      "miss_pct_mean": 8.52,
+      "miss_pct_std": 2.33,
+      "p50_mean": 678.0,
+      "p95_mean": 936.0,
+      "p99_mean": 1223.0,
+      "p999_mean": 1302.0,
+      "tput_mean": 5393.2
+    },
+    "delta_miss": 14.97,
+    "p95_win_us": 454.7
+  },
+  {
+    "bg_iops": 1200.0,
+    "s1": {
+      "miss_pct_mean": 19.03,
+      "miss_pct_std": 4.1,
+      "p50_mean": 691.8,
+      "p95_mean": 1257.0,
+      "p99_mean": 1428.9,
+      "p999_mean": 1516.7,
+      "tput_mean": 5341.2
+    },
+    "s3": {
+      "miss_pct_mean": 9.4,
+      "miss_pct_std": 2.27,
+      "p50_mean": 680.6,
+      "p95_mean": 963.8,
+      "p99_mean": 1246.7,
+      "p999_mean": 1323.2,
+      "tput_mean": 5347.1
+    },
+    "delta_miss": 9.63,
+    "p95_win_us": 293.2
+  },
+  {
+    "bg_iops": 1600.0,
+    "s1": {
+      "miss_pct_mean": 21.54,
+      "miss_pct_std": 3.41,
+      "p50_mean": 691.1,
+      "p95_mean": 1324.5,
+      "p99_mean": 1531.0,
+      "p999_mean": 1585.9,
+      "tput_mean": 5286.5
+    },
+    "s3": {
+      "miss_pct_mean": 7.82,
+      "miss_pct_std": 1.8,
+      "p50_mean": 679.8,
+      "p95_mean": 911.4,
+      "p99_mean": 1238.7,
+      "p999_mean": 1341.0,
+      "tput_mean": 5321.3
+    },
+    "delta_miss": 13.72,
+    "p95_win_us": 413.1
+  }
+]

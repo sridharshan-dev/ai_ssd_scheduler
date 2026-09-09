@@ -1,0 +1,96 @@
+{
+  "regime_a_write_contention": [
+    {
+      "id": "S1",
+      "name": "AI Urgency Only",
+      "miss_pct": 29.19,
+      "p50_us": 702.0,
+      "p95_us": 1347.4,
+      "p99_us": 1520.6,
+      "p99_9_us": 1599.1
+    },
+    {
+      "id": "S3a",
+      "name": "+ Channel/LUN Readiness",
+      "miss_pct": 11.41,
+      "p50_us": 681.1,
+      "p95_us": 1084.6,
+      "p99_us": 1344.9,
+      "p99_9_us": 1433.4
+    },
+    {
+      "id": "S3b",
+      "name": "+ Queue Depth",
+      "miss_pct": 38.26,
+      "p50_us": 729.4,
+      "p95_us": 1183.6,
+      "p99_us": 1310.8,
+      "p99_9_us": 1379.4
+    },
+    {
+      "id": "S3-Full",
+      "name": "Full TEMPO (Urgency + ChanReady + QD)",
+      "miss_pct": 34.9,
+      "p50_us": 714.9,
+      "p95_us": 1082.8,
+      "p99_us": 1221.1,
+      "p99_9_us": 1604.6
+    },
+    {
+      "id": "S3-Native",
+      "name": "Full Cycle-Accurate Delay Prediction",
+      "miss_pct": 5.87,
+      "p50_us": 680.0,
+      "p95_us": 842.3,
+      "p99_us": 1268.2,
+      "p99_9_us": 1364.4
+    }
+  ],
+  "regime_b_gc_interference": [
+    {
+      "id": "S1",
+      "name": "AI Urgency Only",
+      "miss_pct": 50.17,
+      "p50_us": 1207.0,
+      "p95_us": 3180.8,
+      "p99_us": 3602.4,
+      "p99_9_us": 3662.0
+    },
+    {
+      "id": "S3a",
+      "name": "+ Channel/LUN Readiness",
+      "miss_pct": 38.76,
+      "p50_us": 994.3,
+      "p95_us": 2923.9,
+      "p99_us": 3535.5,
+      "p99_9_us": 3587.6
+    },
+    {
+      "id": "S3c",
+      "name": "+ GC State Awareness",
+      "miss_pct": 36.07,
+      "p50_us": 979.4,
+      "p95_us": 2912.9,
+      "p99_us": 3574.3,
+      "p99_9_us": 3626.3
+    },
+    {
+      "id": "S3-Full",
+      "name": "Full TEMPO (Urgency + Chan + QD + GC)",
+      "miss_pct": 25.0,
+      "p50_us": 806.1,
+      "p95_us": 2776.6,
+      "p99_us": 3529.0,
+      "p99_9_us": 3596.8
+    },
+    {
+      "id": "S3-Native",
+      "name": "Full Cycle-Accurate Delay Prediction",
+      "miss_pct": 32.55,
+      "p50_us": 720.4,
+      "p95_us": 2855.5,
+      "p99_us": 3536.9,
+      "p99_9_us": 3588.9
+    }
+  ]
+}

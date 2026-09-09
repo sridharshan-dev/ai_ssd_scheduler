@@ -1,0 +1,47 @@
+{
+  "fifo": {
+    "policy": "S0-FIFO",
+    "total_completed": 1403,
+    "crit_count": 548,
+    "crit_misses": 466,
+    "miss_pct": 85.04,
+    "p50_us": 3199.03,
+    "p95_us": 3692.92,
+    "p99_us": 3752.01,
+    "p99_9_us": 3792.31,
+    "max_us": 3803.71,
+    "throughput_mb_s": 5040.14,
+    "avg_arb_cycles": 483.3,
+    "projected_arm_us": 0.604
+  },
+  "ai_priority": {
+    "policy": "S1-AI-PRIORITY",
+    "total_completed": 1442,
+    "crit_count": 573,
+    "crit_misses": 173,
+    "miss_pct": 30.19,
+    "p50_us": 696.93,
+    "p95_us": 1472.38,
+    "p99_us": 1568.14,
+    "p99_9_us": 1633.99,
+    "max_us": 1653.4,
+    "throughput_mb_s": 5078.67,
+    "avg_arb_cycles": 613.4,
+    "projected_arm_us": 0.767
+  },
+  "tempo": {
+    "policy": "S3-TEMPO",
+    "total_completed": 1464,
+    "crit_count": 579,
+    "crit_misses": 59,
+    "miss_pct": 10.19,
+    "p50_us": 703.55,
+    "p95_us": 1123.54,
+    "p99_us": 1468.54,
+    "p99_9_us": 1736.61,
+    "max_us": 1755.36,
+    "throughput_mb_s": 5091.0,
+    "avg_arb_cycles": 13936.1,
+    "projected_arm_us": 17.42
+  }
+}

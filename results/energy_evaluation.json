@@ -1,0 +1,42 @@
+[
+  {
+    "scheduler": "S0-FIFO",
+    "total_joules": 0.6145,
+    "mj_per_request": 0.408,
+    "mj_per_mb": 3.29,
+    "satisfied_critical_count": 80,
+    "total_critical_count": 596,
+    "miss_pct": 86.58,
+    "mj_per_satisfied_req": 7.682
+  },
+  {
+    "scheduler": "S1-AI-Priority",
+    "total_joules": 0.6101,
+    "mj_per_request": 0.405,
+    "mj_per_mb": 3.266,
+    "satisfied_critical_count": 422,
+    "total_critical_count": 596,
+    "miss_pct": 29.19,
+    "mj_per_satisfied_req": 1.446
+  },
+  {
+    "scheduler": "S2-SSD-State",
+    "total_joules": 0.5964,
+    "mj_per_request": 0.396,
+    "mj_per_mb": 3.193,
+    "satisfied_critical_count": 94,
+    "total_critical_count": 596,
+    "miss_pct": 84.23,
+    "mj_per_satisfied_req": 6.345
+  },
+  {
+    "scheduler": "S3-AI+SSD-State (TEMPO)",
+    "total_joules": 0.6051,
+    "mj_per_request": 0.402,
+    "mj_per_mb": 3.24,
+    "satisfied_critical_count": 561,
+    "total_critical_count": 596,
+    "miss_pct": 5.87,
+    "mj_per_satisfied_req": 1.079
+  }
+]
