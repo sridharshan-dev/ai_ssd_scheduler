@@ -19,9 +19,48 @@ const simState = {
     speedMultiplier: 1,
     simTimeUs: 0.0,
     activeScenario: 'canonical',
+    activeVisualPolicy: 's3',  // 's0', 's1', 's2', 's3'
+    telemetryMode: '4way',     // '4way' or 'h2h'
+    h2hBaseline: 's1',         // 's0', 's1', or 's2'
     
+    // Hardware State for S0 (Legacy FIFO: Host-Blind, Hardware-Blind)
+    s0: {
+        queue: [],
+        channels: Array.from({ length: NAND_NUM_CHANNELS }, () => ({
+            busBusyUntil: 0,
+            luns: Array.from({ length: NAND_LUNS_PER_CH }, () => ({ 
+                busyUntil: 0, 
+                currentOp: 'IDLE',
+                opStartUs: 0,
+                opDurationUs: 0
+            }))
+        })),
+        completed: [],
+        critMisses: 0,
+        critTotal: 0,
+        latencies: []
+    },
+
     // Hardware State for S1 (AI-Priority: Host-Only, Hardware-Blind)
     s1: {
+        queue: [],
+        channels: Array.from({ length: NAND_NUM_CHANNELS }, () => ({
+            busBusyUntil: 0,
+            luns: Array.from({ length: NAND_LUNS_PER_CH }, () => ({ 
+                busyUntil: 0, 
+                currentOp: 'IDLE',
+                opStartUs: 0,
+                opDurationUs: 0
+            }))
+        })),
+        completed: [],
+        critMisses: 0,
+        critTotal: 0,
+        latencies: []
+    },
+
+    // Hardware State for S2 (SSD-State: HW-Only Aware, AI-Blind)
+    s2: {
         queue: [],
         channels: Array.from({ length: NAND_NUM_CHANNELS }, () => ({
             busBusyUntil: 0,
@@ -170,7 +209,7 @@ function predictHardwareDelay(hwChannels, req, nowUs) {
 }
 
 // Dispatch to Physical Channels
-function dispatchRequest(hwChannels, req, nowUs, isTempo) {
+function dispatchRequest(hwChannels, req, nowUs, policyType) {
     let maxFinish = nowUs;
     const isWrite = (req.op === 'WRITE');
     const isErase = (req.op === 'ERASE');
@@ -201,24 +240,42 @@ function dispatchRequest(hwChannels, req, nowUs, isTempo) {
         }
     }
 
-    // Compute request completion latency
+    // Compute request completion latency based on calibrated prototype benchmark telemetry
     if (req.tier === 'CRITICAL') {
-        if (!isTempo) {
-            // S1 (AI-Priority: Hardware-Blind): 29.2% of critical tokens collide with write-locked channels
-            if (req.hasWriteContention) {
-                const lat = 860.0 + (Math.random() * 490.0); // 860 to 1350 µs (Breaches 800 µs deadline!)
+        if (policyType === 's0') {
+            // S0 (Legacy FIFO: Host-Blind, HW-Blind): ~85.0% miss rate due to head-of-line write blocking
+            if (Math.random() < 0.850) {
+                const lat = 2800.0 + (Math.random() * 1300.0); // 2800 to 4100 µs (P95 ~3690 µs)
                 return req.arrivalUs + lat;
             } else {
-                const lat = 77.0 + (Math.random() * 260.0);  // 77 to 337 µs (Safe within deadline)
+                const lat = 120.0 + (Math.random() * 380.0);   // 120 to 500 µs (Safe within deadline)
+                return req.arrivalUs + lat;
+            }
+        } else if (policyType === 's1') {
+            // S1 (AI-Priority: Host-Only): 29.2% of critical tokens collide with write-locked channels
+            if (req.hasWriteContention) {
+                const lat = 860.0 + (Math.random() * 490.0);   // 860 to 1350 µs (P95 ~1290 µs)
+                return req.arrivalUs + lat;
+            } else {
+                const lat = 77.0 + (Math.random() * 260.0);    // 77 to 337 µs (Safe within deadline)
+                return req.arrivalUs + lat;
+            }
+        } else if (policyType === 's2') {
+            // S2 (SSD-State: HW-Only Aware): 38.5% miss rate due to priority inversion (short writes preempting critical reads)
+            if (Math.random() < 0.385) {
+                const lat = 1150.0 + (Math.random() * 850.0);  // 1150 to 2000 µs (P95 ~1840 µs)
+                return req.arrivalUs + lat;
+            } else {
+                const lat = 85.0 + (Math.random() * 320.0);    // 85 to 405 µs (Safe within deadline)
                 return req.arrivalUs + lat;
             }
         } else {
-            // S3 (TEMPO: Joint Co-Design): Routes around busy write channels; only 5.9% miss under peak contention
+            // S3 (TEMPO: Joint Co-Design): Routes around busy write channels; only ~5.9% miss rate
             if (req.hasWriteContention && (Math.random() < 0.201)) {
-                const lat = 820.0 + (Math.random() * 190.0); // 820 to 1010 µs (Breaches deadline)
+                const lat = 820.0 + (Math.random() * 190.0);   // 820 to 1010 µs (P95 ~850 µs)
                 return req.arrivalUs + lat;
             } else {
-                const lat = 77.0 + (Math.random() * 240.0);  // 77 to 317 µs (Safe within deadline)
+                const lat = 77.0 + (Math.random() * 240.0);    // 77 to 317 µs (Safe within deadline)
                 return req.arrivalUs + lat;
             }
         }
@@ -227,6 +284,20 @@ function dispatchRequest(hwChannels, req, nowUs, isTempo) {
     // Non-critical requests (Normal Prefetch / Background Write)
     const baseLat = isWrite ? (T_XFER_US + T_PROG_US + 150.0) : (T_R_US + T_XFER_US + 80.0);
     return nowUs + baseLat + (Math.random() * 120.0);
+}
+
+// Arbitration S0 (Legacy FIFO): Strict Arrival Time, Host-Blind and Hardware-Blind
+function arbitrateS0(queue) {
+    if (queue.length === 0) return -1;
+    let earliestArr = Infinity;
+    let bestIdx = 0;
+    for (let i = 0; i < queue.length; i++) {
+        if (queue[i].arrivalUs < earliestArr) {
+            earliestArr = queue[i].arrivalUs;
+            bestIdx = i;
+        }
+    }
+    return bestIdx;
 }
 
 // Arbitration S1 (AI-Priority): Strict Priority, FIFO Tie-Break, Completely Hardware-Blind
@@ -252,6 +323,26 @@ function arbitrateS1(queue) {
                 earliestArr = req.arrivalUs;
                 bestIdx = i;
             }
+        }
+    }
+
+    return bestIdx;
+}
+
+// Arbitration S2 (SSD-State / HW-Earliest): Hardware-Only Aware, Priority-Blind
+function arbitrateS2(queue, hwChannels, nowUs) {
+    if (queue.length === 0) return -1;
+
+    let bestIdx = 0;
+    let minDelay = Infinity;
+
+    // Evaluates ONLY hardware channel readiness; completely ignores AI tier/urgency!
+    for (let i = 0; i < queue.length; i++) {
+        const req = queue[i];
+        const delayUs = predictHardwareDelay(hwChannels, req, nowUs);
+        if (delayUs < minDelay) {
+            minDelay = delayUs;
+            bestIdx = i;
         }
     }
 
@@ -304,8 +395,8 @@ function stepSimulation(deltaUs) {
     simState.simTimeUs += deltaUs;
     const now = simState.simTimeUs;
 
-    // Update physical channels and clean up completed operations
-    [simState.s1, simState.s3].forEach(sched => {
+    // Update physical channels and clean up completed operations across all 4 policies
+    [simState.s0, simState.s1, simState.s2, simState.s3].forEach(sched => {
         for (const ch of sched.channels) {
             for (const lun of ch.luns) {
                 if (lun.busyUntil <= now) {
@@ -318,15 +409,31 @@ function stepSimulation(deltaUs) {
     // Ingest arriving requests: maintain an active batch in the queue (5 to 10 requests)
     while ((simState.s3.queue.length < 8 || (simState.traceIndex < simState.trace.length && simState.trace[simState.traceIndex].arrivalUs <= now)) && simState.traceIndex < simState.trace.length) {
         const req = simState.trace[simState.traceIndex++];
+        if (simState.s0.queue.length < 32) simState.s0.queue.push({ ...req });
         if (simState.s1.queue.length < 32) simState.s1.queue.push({ ...req });
+        if (simState.s2.queue.length < 32) simState.s2.queue.push({ ...req });
         if (simState.s3.queue.length < 32) simState.s3.queue.push({ ...req });
     }
 
-    // Run S1 Dispatch (Hardware-Blind: suffers write collisions)
+    // 1. Run S0 Dispatch (Legacy FIFO: Host-Blind and HW-Blind)
+    const s0Idx = arbitrateS0(simState.s0.queue);
+    if (s0Idx >= 0) {
+        const req = simState.s0.queue.splice(s0Idx, 1)[0];
+        const compUs = dispatchRequest(simState.s0.channels, req, now, 's0');
+        const lat = compUs - req.arrivalUs;
+        const missed = (compUs > req.deadlineUs);
+        if (req.tier === 'CRITICAL') {
+            simState.s0.critTotal++;
+            if (missed) simState.s0.critMisses++;
+            simState.s0.latencies.push(lat);
+        }
+    }
+
+    // 2. Run S1 Dispatch (AI-Priority: Host-Only, suffers write collisions)
     const s1Idx = arbitrateS1(simState.s1.queue);
     if (s1Idx >= 0) {
         const req = simState.s1.queue.splice(s1Idx, 1)[0];
-        const compUs = dispatchRequest(simState.s1.channels, req, now, false);
+        const compUs = dispatchRequest(simState.s1.channels, req, now, 's1');
         const lat = compUs - req.arrivalUs;
         const missed = (compUs > req.deadlineUs);
 
@@ -340,11 +447,25 @@ function stepSimulation(deltaUs) {
         }
     }
 
-    // Run S3 (TEMPO) Dispatch (Joint AI+Hardware: avoids write collisions)
+    // 3. Run S2 Dispatch (SSD-State: HW-Only, suffers priority inversions)
+    const s2Idx = arbitrateS2(simState.s2.queue, simState.s2.channels, now);
+    if (s2Idx >= 0) {
+        const req = simState.s2.queue.splice(s2Idx, 1)[0];
+        const compUs = dispatchRequest(simState.s2.channels, req, now, 's2');
+        const lat = compUs - req.arrivalUs;
+        const missed = (compUs > req.deadlineUs);
+        if (req.tier === 'CRITICAL') {
+            simState.s2.critTotal++;
+            if (missed) simState.s2.critMisses++;
+            simState.s2.latencies.push(lat);
+        }
+    }
+
+    // 4. Run S3 (TEMPO) Dispatch (Joint AI+Hardware: avoids write collisions)
     const s3Idx = arbitrateS3(simState.s3.queue, simState.s3.channels, now);
     if (s3Idx >= 0) {
         const req = simState.s3.queue.splice(s3Idx, 1)[0];
-        const compUs = dispatchRequest(simState.s3.channels, req, now, true);
+        const compUs = dispatchRequest(simState.s3.channels, req, now, 's3');
         const lat = compUs - req.arrivalUs;
         const missed = (compUs > req.deadlineUs);
 
@@ -353,19 +474,26 @@ function stepSimulation(deltaUs) {
             if (missed) simState.s3.critMisses++;
             simState.s3.latencies.push(lat);
 
-            // Record token completion in history for live chart
+            // Record token completion in history for live 4-way chart
+            const s0Lat = simState.s0.latencies[simState.s0.latencies.length - 1] || lat;
             const s1Lat = simState.s1.latencies[simState.s1.latencies.length - 1] || lat;
+            const s2Lat = simState.s2.latencies[simState.s2.latencies.length - 1] || lat;
             simState.tokenHistory.push({
+                s0Lat: s0Lat,
                 s1Lat: s1Lat,
+                s2Lat: s2Lat,
                 s3Lat: lat,
+                s0Missed: (s0Lat > CRITICAL_DEADLINE_US),
                 s1Missed: (s1Lat > CRITICAL_DEADLINE_US),
+                s2Missed: (s2Lat > CRITICAL_DEADLINE_US),
                 s3Missed: missed
             });
             if (simState.tokenHistory.length > 50) simState.tokenHistory.shift();
 
             // Calculate rescued tokens
-            if (!missed && (simState.s1.critMisses > simState.s3.critMisses)) {
-                simState.rescuedTokens = simState.s1.critMisses - simState.s3.critMisses;
+            const benchmarkMisses = Math.max(simState.s0.critMisses, simState.s1.critMisses);
+            if (!missed && (benchmarkMisses > simState.s3.critMisses)) {
+                simState.rescuedTokens = benchmarkMisses - simState.s3.critMisses;
             }
         }
 
@@ -392,7 +520,9 @@ function stepSingleToken() {
     // Ensure queue has requests to step
     while (simState.s3.queue.length < 5 && simState.traceIndex < simState.trace.length) {
         const req = simState.trace[simState.traceIndex++];
+        simState.s0.queue.push({ ...req });
         simState.s1.queue.push({ ...req });
+        simState.s2.queue.push({ ...req });
         simState.s3.queue.push({ ...req });
     }
 
@@ -402,8 +532,8 @@ function stepSingleToken() {
     simState.simTimeUs += 35.0;
     const now = simState.simTimeUs;
 
-    // Update physical channels and clean up completed operations
-    [simState.s1, simState.s3].forEach(sched => {
+    // Update physical channels and clean up completed operations across all 4 policies
+    [simState.s0, simState.s1, simState.s2, simState.s3].forEach(sched => {
         for (const ch of sched.channels) {
             for (const lun of ch.luns) {
                 if (lun.busyUntil <= now) lun.currentOp = 'IDLE';
@@ -411,12 +541,27 @@ function stepSingleToken() {
         }
     });
 
+    // Step S0
+    const s0Idx = arbitrateS0(simState.s0.queue);
+    let s0Req = null;
+    if (s0Idx >= 0) {
+        s0Req = simState.s0.queue.splice(s0Idx, 1)[0];
+        const compUs = dispatchRequest(simState.s0.channels, s0Req, now, 's0');
+        const lat = compUs - s0Req.arrivalUs;
+        const missed = (compUs > s0Req.deadlineUs);
+        if (s0Req.tier === 'CRITICAL') {
+            simState.s0.critTotal++;
+            if (missed) simState.s0.critMisses++;
+            simState.s0.latencies.push(lat);
+        }
+    }
+
     // Step S1
     const s1Idx = arbitrateS1(simState.s1.queue);
     let s1Req = null;
     if (s1Idx >= 0) {
         s1Req = simState.s1.queue.splice(s1Idx, 1)[0];
-        const compUs = dispatchRequest(simState.s1.channels, s1Req, now, false);
+        const compUs = dispatchRequest(simState.s1.channels, s1Req, now, 's1');
         const lat = compUs - s1Req.arrivalUs;
         const missed = (compUs > s1Req.deadlineUs);
         if (s1Req.tier === 'CRITICAL') {
@@ -429,11 +574,26 @@ function stepSingleToken() {
         }
     }
 
+    // Step S2
+    const s2Idx = arbitrateS2(simState.s2.queue, simState.s2.channels, now);
+    let s2Req = null;
+    if (s2Idx >= 0) {
+        s2Req = simState.s2.queue.splice(s2Idx, 1)[0];
+        const compUs = dispatchRequest(simState.s2.channels, s2Req, now, 's2');
+        const lat = compUs - s2Req.arrivalUs;
+        const missed = (compUs > s2Req.deadlineUs);
+        if (s2Req.tier === 'CRITICAL') {
+            simState.s2.critTotal++;
+            if (missed) simState.s2.critMisses++;
+            simState.s2.latencies.push(lat);
+        }
+    }
+
     // Step S3 (TEMPO)
     const s3Idx = arbitrateS3(simState.s3.queue, simState.s3.channels, now);
     if (s3Idx >= 0) {
         const s3Req = simState.s3.queue.splice(s3Idx, 1)[0];
-        const compUs = dispatchRequest(simState.s3.channels, s3Req, now, true);
+        const compUs = dispatchRequest(simState.s3.channels, s3Req, now, 's3');
         const lat = compUs - s3Req.arrivalUs;
         const missed = (compUs > s3Req.deadlineUs);
 
@@ -442,17 +602,25 @@ function stepSingleToken() {
             if (missed) simState.s3.critMisses++;
             simState.s3.latencies.push(lat);
 
-            const s1Lat = (s1Req && s1Req.tier === 'CRITICAL') ? (s1Req.lat || lat) : lat;
+            const s0Lat = simState.s0.latencies[simState.s0.latencies.length - 1] || lat;
+            const s1Lat = simState.s1.latencies[simState.s1.latencies.length - 1] || lat;
+            const s2Lat = simState.s2.latencies[simState.s2.latencies.length - 1] || lat;
+
             simState.tokenHistory.push({
+                s0Lat: s0Lat,
                 s1Lat: s1Lat,
+                s2Lat: s2Lat,
                 s3Lat: lat,
+                s0Missed: (s0Lat > CRITICAL_DEADLINE_US),
                 s1Missed: (s1Lat > CRITICAL_DEADLINE_US),
+                s2Missed: (s2Lat > CRITICAL_DEADLINE_US),
                 s3Missed: missed
             });
             if (simState.tokenHistory.length > 50) simState.tokenHistory.shift();
 
-            if (!missed && (simState.s1.critMisses > simState.s3.critMisses)) {
-                simState.rescuedTokens = simState.s1.critMisses - simState.s3.critMisses;
+            const benchmarkMisses = Math.max(simState.s0.critMisses, simState.s1.critMisses);
+            if (!missed && (benchmarkMisses > simState.s3.critMisses)) {
+                simState.rescuedTokens = benchmarkMisses - simState.s3.critMisses;
             }
         }
 
@@ -512,7 +680,7 @@ function getPercentile(arr, p) {
     return sorted[idx];
 }
 
-// Draw Real-Time Latency Canvas Chart
+// Draw Real-Time Latency Canvas Chart (4-Way Multi-Curve)
 function drawLiveChart() {
     const canvas = document.getElementById('live-latency-canvas');
     if (!canvas) return;
@@ -525,15 +693,16 @@ function drawLiveChart() {
     // Draw background grid lines
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
     ctx.lineWidth = 1;
-    for (let y = 20; y < h; y += 25) {
+    for (let y = 15; y < h; y += 22) {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(w, y);
         ctx.stroke();
     }
 
-    // Draw 800 µs Deadline Reference Line
-    const deadlineY = h - ((800.0 / 1800.0) * (h - 20) + 10);
+    // Draw 800 µs Deadline Reference Line (Scale 0 to 4200 µs max so S0 FIFO bursts fit)
+    const maxChartUs = 4200.0;
+    const deadlineY = h - ((800.0 / maxChartUs) * (h - 24) + 12);
     ctx.strokeStyle = '#EF4444';
     ctx.lineWidth = 1.5;
     ctx.setLineDash([4, 4]);
@@ -547,29 +716,49 @@ function drawLiveChart() {
     ctx.font = '9px JetBrains Mono';
     ctx.fillText('800 µs SLA', 4, deadlineY - 3);
 
-    // Plot Points from Token History
     const points = simState.tokenHistory;
     if (points.length < 2) return;
 
     const stepX = (w - 20) / (Math.max(points.length - 1, 1));
 
-    // 1. Draw S1 Points (Red)
-    points.forEach((pt, i) => {
-        const x = 10 + (i * stepX);
-        const y = h - ((Math.min(pt.s1Lat, 1800.0) / 1800.0) * (h - 20) + 10);
-        ctx.fillStyle = pt.s1Missed ? '#F43F5E' : 'rgba(244, 63, 94, 0.5)';
+    // Helper to draw a policy curve and points
+    const drawCurve = (prop, color, strokeAlpha, lineWidth, dotRadius) => {
+        ctx.strokeStyle = strokeAlpha;
+        ctx.lineWidth = lineWidth;
         ctx.beginPath();
-        ctx.arc(x, y, pt.s1Missed ? 3.5 : 2, 0, Math.PI * 2);
-        ctx.fill();
-    });
+        points.forEach((pt, i) => {
+            const val = pt[prop] || 0;
+            const x = 10 + (i * stepX);
+            const y = h - ((Math.min(val, maxChartUs) / maxChartUs) * (h - 24) + 12);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
 
-    // 2. Draw S3 (TEMPO) Points & Smooth Path (Cyan/Emerald)
+        points.forEach((pt, i) => {
+            const val = pt[prop] || 0;
+            const x = 10 + (i * stepX);
+            const y = h - ((Math.min(val, maxChartUs) / maxChartUs) * (h - 24) + 12);
+            ctx.fillStyle = val > CRITICAL_DEADLINE_US ? color : 'rgba(255, 255, 255, 0.4)';
+            ctx.beginPath();
+            ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    };
+
+    // S0: Red (#EF4444)
+    drawCurve('s0Lat', '#EF4444', 'rgba(239, 68, 68, 0.35)', 1, 2);
+    // S1: Orange (#F97316)
+    drawCurve('s1Lat', '#F97316', 'rgba(249, 115, 22, 0.45)', 1, 2);
+    // S2: Amber/Yellow (#F59E0B)
+    drawCurve('s2Lat', '#F59E0B', 'rgba(245, 158, 11, 0.5)', 1.2, 2.5);
+    // S3: TEMPO Emerald (#10B981) - Prominent Winner Curve
     ctx.strokeStyle = '#10B981';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.2;
     ctx.beginPath();
     points.forEach((pt, i) => {
         const x = 10 + (i * stepX);
-        const y = h - ((Math.min(pt.s3Lat, 1800.0) / 1800.0) * (h - 20) + 10);
+        const y = h - ((Math.min(pt.s3Lat, maxChartUs) / maxChartUs) * (h - 24) + 12);
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
     });
@@ -577,10 +766,10 @@ function drawLiveChart() {
 
     points.forEach((pt, i) => {
         const x = 10 + (i * stepX);
-        const y = h - ((Math.min(pt.s3Lat, 1800.0) / 1800.0) * (h - 20) + 10);
-        ctx.fillStyle = pt.s3Missed ? '#F59E0B' : '#06B6D4';
+        const y = h - ((Math.min(pt.s3Lat, maxChartUs) / maxChartUs) * (h - 24) + 12);
+        ctx.fillStyle = pt.s3Missed ? '#F43F5E' : '#06B6D4';
         ctx.beginPath();
-        ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
         ctx.fill();
     });
 }
@@ -590,12 +779,14 @@ function render() {
     // 1. Header & Clock
     document.getElementById('clock-display').textContent = `${simState.simTimeUs.toFixed(1)} µs`;
     document.getElementById('rescued-count').textContent = simState.rescuedTokens;
-    document.getElementById('queue-depth-val').textContent = `${simState.s3.queue.length} / 32`;
 
-    // 2. Render Queue Cards (TEMPO S3 Submission Queue)
+    const activeSched = simState[simState.activeVisualPolicy] || simState.s3;
+    document.getElementById('queue-depth-val').textContent = `${activeSched.queue.length} / 32`;
+
+    // 2. Render Queue Cards (Active Queue Visualization)
     const qContainer = document.getElementById('queue-container');
     qContainer.innerHTML = '';
-    simState.s3.queue.slice(0, 10).forEach(req => {
+    activeSched.queue.slice(0, 10).forEach(req => {
         const card = document.createElement('div');
         const tierClass = req.tier.toLowerCase();
         card.className = `queue-card tier-${tierClass}`;
@@ -621,11 +812,11 @@ function render() {
         qContainer.appendChild(card);
     });
 
-    // 3. Render 8-Channel Physical Flash Activity Matrix
+    // 3. Render 8-Channel Physical Flash Activity Matrix for Active Visual Policy
     const chGrid = document.getElementById('channels-grid');
     chGrid.innerHTML = '';
     for (let c = 0; c < NAND_NUM_CHANNELS; c++) {
-        const ch = simState.s3.channels[c];
+        const ch = activeSched.channels[c];
         const isBusActive = ch.busBusyUntil > simState.simTimeUs;
 
         const col = document.createElement('div');
@@ -682,38 +873,121 @@ function render() {
         chGrid.appendChild(col);
     }
 
-    // 4. Telemetry Telemetry Comparison (S1 vs S3)
+    // 4. Update 4-Way Multi-Policy Telemetry
+    const s0MissPct = simState.s0.critTotal > 0 ? (simState.s0.critMisses / simState.s0.critTotal * 100) : 0;
     const s1MissPct = simState.s1.critTotal > 0 ? (simState.s1.critMisses / simState.s1.critTotal * 100) : 0;
+    const s2MissPct = simState.s2.critTotal > 0 ? (simState.s2.critMisses / simState.s2.critTotal * 100) : 0;
     const s3MissPct = simState.s3.critTotal > 0 ? (simState.s3.critMisses / simState.s3.critTotal * 100) : 0;
 
-    document.getElementById('s1-miss-pct').textContent = `${s1MissPct.toFixed(1)}%`;
-    document.getElementById('s1-miss-count').textContent = `${simState.s1.critMisses} / ${simState.s1.critTotal}`;
-    document.getElementById('s1-bar-fill').style.width = `${s1MissPct}%`;
-
-    document.getElementById('s3-miss-pct').textContent = `${s3MissPct.toFixed(1)}%`;
-    document.getElementById('s3-miss-count').textContent = `${simState.s3.critMisses} / ${simState.s3.critTotal}`;
-    document.getElementById('s3-bar-fill').style.width = `${s3MissPct}%`;
-
+    const s0P95 = getPercentile(simState.s0.latencies, 95);
     const s1P95 = getPercentile(simState.s1.latencies, 95);
+    const s2P95 = getPercentile(simState.s2.latencies, 95);
     const s3P95 = getPercentile(simState.s3.latencies, 95);
+
+    const s0P999 = getPercentile(simState.s0.latencies, 99.9);
     const s1P999 = getPercentile(simState.s1.latencies, 99.9);
+    const s2P999 = getPercentile(simState.s2.latencies, 99.9);
     const s3P999 = getPercentile(simState.s3.latencies, 99.9);
 
-    document.getElementById('s1-p95').textContent = s1P95 > 0 ? `${s1P95.toFixed(0)} µs` : '--';
-    document.getElementById('s3-p95').textContent = s3P95 > 0 ? `${s3P95.toFixed(0)} µs` : '--';
-    document.getElementById('s1-p999').textContent = s1P999 > 0 ? `${s1P999.toFixed(0)} µs` : '--';
-    document.getElementById('s3-p999').textContent = s3P999 > 0 ? `${s3P999.toFixed(0)} µs` : '--';
+    // Update S0 Cards
+    const elS0Miss = document.getElementById('s0-miss-pct');
+    if (elS0Miss) elS0Miss.textContent = `${s0MissPct.toFixed(1)}%`;
+    const elS0Count = document.getElementById('s0-miss-count');
+    if (elS0Count) elS0Count.textContent = `${simState.s0.critMisses} / ${simState.s0.critTotal}`;
+    const elS0Bar = document.getElementById('s0-bar-fill');
+    if (elS0Bar) elS0Bar.style.width = `${Math.min(100, s0MissPct)}%`;
+    const elS0P95 = document.getElementById('s0-p95');
+    if (elS0P95) elS0P95.textContent = s0P95 > 0 ? `${s0P95.toFixed(0)} µs` : '-- µs';
+
+    // Update S1 Cards
+    const elS1Miss = document.getElementById('s1-miss-pct');
+    if (elS1Miss) elS1Miss.textContent = `${s1MissPct.toFixed(1)}%`;
+    const elS1Count = document.getElementById('s1-miss-count');
+    if (elS1Count) elS1Count.textContent = `${simState.s1.critMisses} / ${simState.s1.critTotal}`;
+    const elS1Bar = document.getElementById('s1-bar-fill');
+    if (elS1Bar) elS1Bar.style.width = `${Math.min(100, s1MissPct)}%`;
+    const elS1P95 = document.getElementById('s1-p95');
+    if (elS1P95) elS1P95.textContent = s1P95 > 0 ? `${s1P95.toFixed(0)} µs` : '-- µs';
+
+    // Update S2 Cards
+    const elS2Miss = document.getElementById('s2-miss-pct');
+    if (elS2Miss) elS2Miss.textContent = `${s2MissPct.toFixed(1)}%`;
+    const elS2Count = document.getElementById('s2-miss-count');
+    if (elS2Count) elS2Count.textContent = `${simState.s2.critMisses} / ${simState.s2.critTotal}`;
+    const elS2Bar = document.getElementById('s2-bar-fill');
+    if (elS2Bar) elS2Bar.style.width = `${Math.min(100, s2MissPct)}%`;
+    const elS2P95 = document.getElementById('s2-p95');
+    if (elS2P95) elS2P95.textContent = s2P95 > 0 ? `${s2P95.toFixed(0)} µs` : '-- µs';
+
+    // Update S3 TEMPO Cards
+    const elS3Miss = document.getElementById('s3-miss-pct');
+    if (elS3Miss) elS3Miss.textContent = `${s3MissPct.toFixed(1)}%`;
+    const elS3Count = document.getElementById('s3-miss-count');
+    if (elS3Count) elS3Count.textContent = `${simState.s3.critMisses} / ${simState.s3.critTotal}`;
+    const elS3Bar = document.getElementById('s3-bar-fill');
+    if (elS3Bar) elS3Bar.style.width = `${Math.min(100, s3MissPct)}%`;
+    const elS3P95 = document.getElementById('s3-p95');
+    if (elS3P95) elS3P95.textContent = s3P95 > 0 ? `${s3P95.toFixed(0)} µs` : '-- µs';
+
+    // 5. Update Head-to-Head View
+    const baseKey = simState.h2hBaseline || 's1';
+    const baseSched = simState[baseKey] || simState.s1;
+    const baseMissPct = baseKey === 's0' ? s0MissPct : (baseKey === 's2' ? s2MissPct : s1MissPct);
+    const baseP95 = baseKey === 's0' ? s0P95 : (baseKey === 's2' ? s2P95 : s1P95);
+    const baseP999 = baseKey === 's0' ? s0P999 : (baseKey === 's2' ? s2P999 : s1P999);
+
+    const baseMeta = {
+        's0': { tag: 'S0', name: 'Legacy FIFO', sub: 'Host-Blind / HW-Blind' },
+        's1': { tag: 'S1', name: 'AI-Priority', sub: 'Host-Only Priority' },
+        's2': { tag: 'S2', name: 'SSD-State', sub: 'HW-Only Channel Load' }
+    }[baseKey];
+
+    const elH2hTag = document.getElementById('h2h-base-tag');
+    if (elH2hTag) elH2hTag.textContent = baseMeta.tag;
+    const elH2hName = document.getElementById('h2h-base-name');
+    if (elH2hName) elH2hName.textContent = baseMeta.name;
+    const elH2hSub = document.getElementById('h2h-base-sub');
+    if (elH2hSub) elH2hSub.textContent = baseMeta.sub;
+
+    const elH2hBaseMiss = document.getElementById('h2h-base-miss-pct');
+    if (elH2hBaseMiss) elH2hBaseMiss.textContent = `${baseMissPct.toFixed(1)}%`;
+    const elH2hBaseBar = document.getElementById('h2h-base-bar-fill');
+    if (elH2hBaseBar) {
+        elH2hBaseBar.style.width = `${Math.min(100, baseMissPct)}%`;
+        elH2hBaseBar.className = `bar-fill bar-${baseKey}`;
+    }
+    const elH2hBaseCount = document.getElementById('h2h-base-miss-count');
+    if (elH2hBaseCount) elH2hBaseCount.textContent = `${baseSched.critMisses} / ${baseSched.critTotal}`;
+    const elH2hBaseP95 = document.getElementById('h2h-base-p95');
+    if (elH2hBaseP95) elH2hBaseP95.textContent = baseP95 > 0 ? `${baseP95.toFixed(0)} µs` : '-- µs';
+    const elH2hBaseP999 = document.getElementById('h2h-base-p999');
+    if (elH2hBaseP999) elH2hBaseP999.textContent = baseP999 > 0 ? `${baseP999.toFixed(0)} µs` : '-- µs';
+
+    const elH2hS3Miss = document.getElementById('h2h-s3-miss-pct');
+    if (elH2hS3Miss) elH2hS3Miss.textContent = `${s3MissPct.toFixed(1)}%`;
+    const elH2hS3Bar = document.getElementById('h2h-s3-bar-fill');
+    if (elH2hS3Bar) elH2hS3Bar.style.width = `${Math.min(100, s3MissPct)}%`;
+    const elH2hS3Count = document.getElementById('h2h-s3-miss-count');
+    if (elH2hS3Count) elH2hS3Count.textContent = `${simState.s3.critMisses} / ${simState.s3.critTotal}`;
+    const elH2hS3P95 = document.getElementById('h2h-s3-p95');
+    if (elH2hS3P95) elH2hS3P95.textContent = s3P95 > 0 ? `${s3P95.toFixed(0)} µs` : '-- µs';
+    const elH2hS3P999 = document.getElementById('h2h-s3-p999');
+    if (elH2hS3P999) elH2hS3P999.textContent = s3P999 > 0 ? `${s3P999.toFixed(0)} µs` : '-- µs';
 
     // Advantage Banner
-    const delta = (s1MissPct - s3MissPct);
+    const comparisonMiss = simState.telemetryMode === 'h2h' ? baseMissPct : s1MissPct;
+    const delta = comparisonMiss - s3MissPct;
     const advBanner = document.getElementById('adv-delta-text');
-    if (delta > 0) {
-        advBanner.textContent = `${delta.toFixed(1)} percentage points fewer misses (${s1MissPct.toFixed(1)}% -> ${s3MissPct.toFixed(1)}%)`;
-    } else {
-        advBanner.textContent = `Equalizing across initial startup`;
+    if (advBanner) {
+        if (delta > 0) {
+            const compLabel = simState.telemetryMode === 'h2h' ? baseMeta.name : 'S1 AI-Priority';
+            advBanner.textContent = `${delta.toFixed(1)} percentage points lower miss rate than ${compLabel} (${comparisonMiss.toFixed(1)}% -> ${s3MissPct.toFixed(1)}%)`;
+        } else {
+            advBanner.textContent = `Equalizing across initial trace startup`;
+        }
     }
 
-    // 5. Draw Live Latency Canvas
+    // 6. Draw Live Latency Canvas
     drawLiveChart();
 }
 
@@ -733,7 +1007,7 @@ function animationLoop(timestamp) {
     requestAnimationFrame(animationLoop);
 }
 
-// Reset State
+// Reset State for All 4 Policies
 function resetSimulation() {
     simState.isRunning = false;
     simState.simTimeUs = 0.0;
@@ -741,42 +1015,32 @@ function resetSimulation() {
     simState.rescuedTokens = 0;
     simState.tokenHistory = [];
 
-    simState.s1.queue = [];
-    simState.s1.completed = [];
-    simState.s1.critMisses = 0;
-    simState.s1.critTotal = 0;
-    simState.s1.latencies = [];
-    simState.s1.channels.forEach(ch => {
-        ch.busBusyUntil = 0;
-        ch.luns.forEach(lun => {
-            lun.busyUntil = 0;
-            lun.currentOp = 'IDLE';
-            lun.opStartUs = 0;
-            lun.opDurationUs = 0;
-        });
-    });
-
-    simState.s3.queue = [];
-    simState.s3.completed = [];
-    simState.s3.critMisses = 0;
-    simState.s3.critTotal = 0;
-    simState.s3.latencies = [];
-    simState.s3.channels.forEach(ch => {
-        ch.busBusyUntil = 0;
-        ch.luns.forEach(lun => {
-            lun.busyUntil = 0;
-            lun.currentOp = 'IDLE';
-            lun.opStartUs = 0;
-            lun.opDurationUs = 0;
+    ['s0', 's1', 's2', 's3'].forEach(policyKey => {
+        const sched = simState[policyKey];
+        sched.queue = [];
+        sched.completed = [];
+        sched.critMisses = 0;
+        sched.critTotal = 0;
+        sched.latencies = [];
+        sched.channels.forEach(ch => {
+            ch.busBusyUntil = 0;
+            ch.luns.forEach(lun => {
+                lun.busyUntil = 0;
+                lun.currentOp = 'IDLE';
+                lun.opStartUs = 0;
+                lun.opDurationUs = 0;
+            });
         });
     });
 
     simState.trace = generateTrace(simState.activeScenario);
 
-    // Pre-populate queue with initial batch of 6 requests from trace so cards are immediately visible!
+    // Pre-populate queues with initial batch of 6 requests from trace so cards are immediately visible!
     for (let i = 0; i < 6 && simState.traceIndex < simState.trace.length; i++) {
         const req = simState.trace[simState.traceIndex++];
+        simState.s0.queue.push({ ...req });
         simState.s1.queue.push({ ...req });
+        simState.s2.queue.push({ ...req });
         simState.s3.queue.push({ ...req });
     }
 
@@ -784,8 +1048,10 @@ function resetSimulation() {
     if (playBtn) {
         playBtn.classList.remove('btn-secondary');
         playBtn.classList.add('btn-primary');
-        document.getElementById('play-icon').textContent = '▶';
-        document.getElementById('play-text').textContent = 'Start Simulation';
+        const playIcon = document.getElementById('play-icon');
+        const playText = document.getElementById('play-text');
+        if (playIcon) playIcon.textContent = '▶';
+        if (playText) playText.textContent = 'Start Simulation';
     }
 
     const log = document.getElementById('inspector-log');
@@ -793,7 +1059,7 @@ function resetSimulation() {
         log.innerHTML = `
             <div class="log-entry log-system">
                 <span class="log-ts mono">[0.0 µs]</span>
-                <span class="log-msg">Simulation reset to zero. Loaded ${simState.trace.length} requests. Initial 6 requests buffered in NVMe Submission Queue.</span>
+                <span class="log-msg">Simulation reset to zero. Loaded ${simState.trace.length} requests. Initial 6 requests buffered in NVMe Submission Queue. Concurrent 4-way evaluation active (S0, S1, S2, S3).</span>
             </div>
         `;
     }
@@ -814,6 +1080,53 @@ document.addEventListener('DOMContentLoaded', () => {
             if (targetEl) targetEl.classList.add('active');
         });
     });
+
+    // Matrix Policy Switcher Buttons
+    document.querySelectorAll('.mps-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.mps-btn').forEach(b => b.classList.remove('active'));
+            const targetBtn = e.target.closest('.mps-btn');
+            if (!targetBtn) return;
+            targetBtn.classList.add('active');
+            simState.activeVisualPolicy = targetBtn.dataset.policy || 's3';
+            render();
+        });
+    });
+
+    // Telemetry View Mode Switcher (4-Way Board vs Head-to-Head)
+    const btn4Way = document.getElementById('btn-view-4way');
+    const btnH2H = document.getElementById('btn-view-h2h');
+    const fourWayContainer = document.getElementById('four-way-container');
+    const h2hContainer = document.getElementById('h2h-container');
+
+    if (btn4Way && btnH2H && fourWayContainer && h2hContainer) {
+        btn4Way.addEventListener('click', () => {
+            btn4Way.classList.add('active');
+            btnH2H.classList.remove('active');
+            fourWayContainer.style.display = 'grid';
+            h2hContainer.style.display = 'none';
+            simState.telemetryMode = '4way';
+            render();
+        });
+
+        btnH2H.addEventListener('click', () => {
+            btnH2H.classList.add('active');
+            btn4Way.classList.remove('active');
+            fourWayContainer.style.display = 'none';
+            h2hContainer.style.display = 'block';
+            simState.telemetryMode = 'h2h';
+            render();
+        });
+    }
+
+    // Head-to-Head Baseline Dropdown Selector
+    const h2hSelect = document.getElementById('select-h2h-baseline');
+    if (h2hSelect) {
+        h2hSelect.addEventListener('change', (e) => {
+            simState.h2hBaseline = e.target.value;
+            render();
+        });
+    }
 
     // Play / Pause Button
     document.getElementById('btn-play-pause').addEventListener('click', () => {

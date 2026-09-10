@@ -153,6 +153,17 @@
                         </div>
                     </div>
 
+                    <!-- Channel Matrix Policy Switcher -->
+                    <div class="matrix-policy-selector">
+                        <span class="mps-label">Visualizing Channels For:</span>
+                        <div class="mps-buttons">
+                            <button class="mps-btn active" data-policy="s3">⚡ S3: TEMPO (Co-Design)</button>
+                            <button class="mps-btn" data-policy="s0">S0: Legacy FIFO</button>
+                            <button class="mps-btn" data-policy="s1">S1: AI-Priority</button>
+                            <button class="mps-btn" data-policy="s2">S2: SSD-State</button>
+                        </div>
+                    </div>
+
                     <div class="hardware-state-legend">
                         <span class="state-pill state-idle"><span class="dot"></span> IDLE</span>
                         <span class="state-pill state-sense"><span class="dot"></span> READ SENSING (36 µs)</span>
@@ -166,58 +177,152 @@
                     </div>
                 </section>
 
-                <!-- Right Panel: Live Race Telemetry (S1 vs S3) -->
+                <!-- Right Panel: Multi-Policy Race Telemetry (S0 vs S1 vs S2 vs S3) -->
                 <section class="panel glass-card telemetry-panel">
                     <div class="panel-header">
                         <div class="ph-title">
                             <span class="icon">📊</span>
-                            <h3>Live Race: AI-Priority (S1) vs TEMPO (S3)</h3>
+                            <h3>Multi-Policy Race: S0, S1, S2 vs S3 TEMPO</h3>
+                        </div>
+                        <div class="telemetry-view-mode">
+                            <button class="tvm-btn active" id="btn-view-4way">4-Way Board</button>
+                            <button class="tvm-btn" id="btn-view-h2h">Head-to-Head</button>
                         </div>
                     </div>
 
-                    <!-- Headline Miss Comparison -->
-                    <div class="metric-comparison-box">
-                        <div class="scheduler-col s1-col">
-                            <div class="sc-header">
-                                <span class="sc-tag">S1</span>
-                                <h4>AI-Priority</h4>
-                                <span class="sc-sub">Hardware-Blind</span>
+                    <!-- 4-Way Multi-Policy Board -->
+                    <div id="four-way-container" class="four-way-container">
+                        <!-- S0: Legacy FIFO -->
+                        <div class="policy-card policy-s0">
+                            <div class="pc-header">
+                                <span class="pc-tag tag-s0">S0</span>
+                                <div class="pc-title-group">
+                                    <span class="pc-name">Legacy FIFO</span>
+                                    <span class="pc-sub">Host-Blind / HW-Blind</span>
+                                </div>
+                                <span class="pc-miss-val mono" id="s0-miss-pct">0.0%</span>
                             </div>
-                            <div class="miss-rate-display">
-                                <span id="s1-miss-pct" class="miss-val mono">0.0%</span>
-                                <span class="miss-sub">Deadline Miss Rate</span>
+                            <div class="metric-mini-bar">
+                                <div id="s0-bar-fill" class="bar-fill bar-s0" style="width: 0%"></div>
+                            </div>
+                            <div class="pc-stats-row">
+                                <span>P95: <strong class="mono" id="s0-p95">-- µs</strong></span>
+                                <span>Misses: <strong class="mono" id="s0-miss-count">0 / 0</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- S1: AI-Priority -->
+                        <div class="policy-card policy-s1">
+                            <div class="pc-header">
+                                <span class="pc-tag tag-s1">S1</span>
+                                <div class="pc-title-group">
+                                    <span class="pc-name">AI-Priority</span>
+                                    <span class="pc-sub">Host-Only Priority</span>
+                                </div>
+                                <span class="pc-miss-val mono" id="s1-miss-pct">0.0%</span>
                             </div>
                             <div class="metric-mini-bar">
                                 <div id="s1-bar-fill" class="bar-fill bar-s1" style="width: 0%"></div>
                             </div>
-                            <div class="metric-details">
-                                <div class="md-row"><span>Misses:</span><span id="s1-miss-count" class="mono">0</span></div>
-                                <div class="md-row"><span>P95 Tail:</span><span id="s1-p95" class="mono">-- µs</span></div>
-                                <div class="md-row"><span>P99.9 Tail:</span><span id="s1-p999" class="mono">-- µs</span></div>
+                            <div class="pc-stats-row">
+                                <span>P95: <strong class="mono" id="s1-p95">-- µs</strong></span>
+                                <span>Misses: <strong class="mono" id="s1-miss-count">0 / 0</strong></span>
                             </div>
                         </div>
 
-                        <div class="vs-divider">
-                            <span>VS</span>
+                        <!-- S2: SSD-State -->
+                        <div class="policy-card policy-s2">
+                            <div class="pc-header">
+                                <span class="pc-tag tag-s2">S2</span>
+                                <div class="pc-title-group">
+                                    <span class="pc-name">SSD-State</span>
+                                    <span class="pc-sub">HW-Only Channel Load</span>
+                                </div>
+                                <span class="pc-miss-val mono" id="s2-miss-pct">0.0%</span>
+                            </div>
+                            <div class="metric-mini-bar">
+                                <div id="s2-bar-fill" class="bar-fill bar-s2" style="width: 0%"></div>
+                            </div>
+                            <div class="pc-stats-row">
+                                <span>P95: <strong class="mono" id="s2-p95">-- µs</strong></span>
+                                <span>Misses: <strong class="mono" id="s2-miss-count">0 / 0</strong></span>
+                            </div>
                         </div>
 
-                        <div class="scheduler-col s3-col highlight-winner">
-                            <div class="sc-header">
-                                <span class="sc-tag tempo-tag">S3</span>
-                                <h4>TEMPO</h4>
-                                <span class="sc-sub">Joint AI+Hardware</span>
-                            </div>
-                            <div class="miss-rate-display">
-                                <span id="s3-miss-pct" class="miss-val mono highlight-green">0.0%</span>
-                                <span class="miss-sub">Deadline Miss Rate</span>
+                        <!-- S3: TEMPO (Winner) -->
+                        <div class="policy-card policy-s3 highlight-winner">
+                            <div class="pc-header">
+                                <span class="pc-tag tempo-tag">S3</span>
+                                <div class="pc-title-group">
+                                    <span class="pc-name highlight-green">TEMPO ⚡</span>
+                                    <span class="pc-sub">Joint AI+Hardware Co-Design</span>
+                                </div>
+                                <span class="pc-miss-val mono highlight-green" id="s3-miss-pct">0.0%</span>
                             </div>
                             <div class="metric-mini-bar">
                                 <div id="s3-bar-fill" class="bar-fill bar-s3" style="width: 0%"></div>
                             </div>
-                            <div class="metric-details">
-                                <div class="md-row"><span>Misses:</span><span id="s3-miss-count" class="mono highlight-green">0</span></div>
-                                <div class="md-row"><span>P95 Tail:</span><span id="s3-p95" class="mono highlight-green">-- µs</span></div>
-                                <div class="md-row"><span>P99.9 Tail:</span><span id="s3-p999" class="mono highlight-green">-- µs</span></div>
+                            <div class="pc-stats-row">
+                                <span>P95: <strong class="mono highlight-green" id="s3-p95">-- µs</strong></span>
+                                <span>Misses: <strong class="mono highlight-green" id="s3-miss-count">0 / 0</strong></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Head-to-Head Comparison View (Toggleable) -->
+                    <div id="h2h-container" class="h2h-container" style="display: none;">
+                        <div class="h2h-selector-row">
+                            <span class="h2h-label">Compare TEMPO against:</span>
+                            <select id="select-h2h-baseline" class="custom-select mini-select">
+                                <option value="s1" selected>S1: AI-Priority (Host-Only)</option>
+                                <option value="s0">S0: Legacy FIFO (Standard NVMe)</option>
+                                <option value="s2">S2: SSD-State (HW-Only)</option>
+                            </select>
+                        </div>
+
+                        <div class="metric-comparison-box">
+                            <div class="scheduler-col baseline-col">
+                                <div class="sc-header">
+                                    <span class="sc-tag" id="h2h-base-tag">S1</span>
+                                    <h4 id="h2h-base-name">AI-Priority</h4>
+                                    <span class="sc-sub" id="h2h-base-sub">Host-Only Priority</span>
+                                </div>
+                                <div class="miss-rate-display">
+                                    <span id="h2h-base-miss-pct" class="miss-val mono">0.0%</span>
+                                    <span class="miss-sub">Deadline Miss Rate</span>
+                                </div>
+                                <div class="metric-mini-bar">
+                                    <div id="h2h-base-bar-fill" class="bar-fill bar-s1" style="width: 0%"></div>
+                                </div>
+                                <div class="metric-details">
+                                    <div class="md-row"><span>Misses:</span><span id="h2h-base-miss-count" class="mono">0</span></div>
+                                    <div class="md-row"><span>P95 Tail:</span><span id="h2h-base-p95" class="mono">-- µs</span></div>
+                                    <div class="md-row"><span>P99.9 Tail:</span><span id="h2h-base-p999" class="mono">-- µs</span></div>
+                                </div>
+                            </div>
+
+                            <div class="vs-divider">
+                                <span>VS</span>
+                            </div>
+
+                            <div class="scheduler-col s3-col highlight-winner">
+                                <div class="sc-header">
+                                    <span class="sc-tag tempo-tag">S3</span>
+                                    <h4>TEMPO</h4>
+                                    <span class="sc-sub">Joint AI+Hardware</span>
+                                </div>
+                                <div class="miss-rate-display">
+                                    <span id="h2h-s3-miss-pct" class="miss-val mono highlight-green">0.0%</span>
+                                    <span class="miss-sub">Deadline Miss Rate</span>
+                                </div>
+                                <div class="metric-mini-bar">
+                                    <div id="h2h-s3-bar-fill" class="bar-fill bar-s3" style="width: 0%"></div>
+                                </div>
+                                <div class="metric-details">
+                                    <div class="md-row"><span>Misses:</span><span id="h2h-s3-miss-count" class="mono highlight-green">0</span></div>
+                                    <div class="md-row"><span>P95 Tail:</span><span id="h2h-s3-p95" class="mono highlight-green">-- µs</span></div>
+                                    <div class="md-row"><span>P99.9 Tail:</span><span id="h2h-s3-p999" class="mono highlight-green">-- µs</span></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -235,7 +340,7 @@
                     <div class="chart-box">
                         <div class="chart-header">
                             <span>Critical Token Latency vs 800 µs Deadline</span>
-                            <span class="chart-sub mono">Green: TEMPO | Red: S1 Stalls</span>
+                            <span class="chart-sub mono">Green: S3 | Yellow: S2 | Orange: S1 | Red: S0</span>
                         </div>
                         <canvas id="live-latency-canvas" width="340" height="110"></canvas>
                     </div>
