@@ -55,6 +55,31 @@ body {
     overflow-x: hidden;
 }
 
+/* Universal Button Reset & Dark Theme */
+button {
+    font-family: inherit;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* Custom Select & Option Dark Theme Styling */
+select, option {
+    background-color: #0b1120 !important;
+    color: #f8fafc !important;
+}
+
+select option {
+    background-color: #0b1120 !important;
+    color: #f8fafc !important;
+    padding: 10px 14px;
+}
+
 .mono {
     font-family: var(--font-mono);
 }
@@ -329,37 +354,52 @@ body {
 }
 
 .speed-btn {
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 12px;
+    background: #1e293b !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #94a3b8 !important;
+    font-size: 11px;
     font-weight: 600;
-    padding: 4px 10px;
+    padding: 5px 12px;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
+.speed-btn:hover {
+    background: #334155 !important;
+    color: #ffffff !important;
+}
+
 .speed-btn.active {
-    background: var(--accent-cyan);
-    color: #07090E;
-    box-shadow: 0 0 8px var(--accent-cyan-glow);
+    background: #06b6d4 !important;
+    color: #07090e !important;
+    font-weight: 700 !important;
+    border-color: #22d3ee !important;
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.45) !important;
 }
 
 .custom-select {
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-primary);
+    background: #0f172a !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    color: #f8fafc !important;
     font-size: 13px;
     padding: 7px 14px;
     border-radius: 8px;
     outline: none;
     cursor: pointer;
     font-family: var(--font-main);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .custom-select:focus {
-    border-color: var(--accent-cyan);
+    border-color: #06b6d4 !important;
+    box-shadow: 0 0 8px rgba(6, 182, 212, 0.3) !important;
+}
+
+.custom-select option {
+    background: #0b1120 !important;
+    color: #f8fafc !important;
+    padding: 10px 14px;
 }
 
 .stat-pills-live {
@@ -808,75 +848,86 @@ body {
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 8px;
-    background: rgba(0, 0, 0, 0.35);
-    border: 1px solid var(--border-subtle);
-    padding: 6px 12px;
+    background: #0f172a !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    padding: 8px 14px;
     border-radius: 8px;
     margin-bottom: 12px;
 }
 
 .mps-label {
     font-size: 11px;
-    font-weight: 600;
-    color: var(--text-secondary);
+    font-weight: 700;
+    color: #94a3b8 !important;
 }
 
 .mps-buttons {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     flex-wrap: wrap;
 }
 
 .mps-btn {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-secondary);
+    background: #1e293b !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #cbd5e1 !important;
     font-size: 11px;
-    font-weight: 600;
-    padding: 4px 10px;
+    font-weight: 700;
+    padding: 5px 12px;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .mps-btn:hover {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff !important;
+    background: #334155 !important;
+    border-color: rgba(6, 182, 212, 0.5) !important;
 }
 
 .mps-btn.active {
-    background: rgba(6, 182, 212, 0.2);
-    color: #A5F3FC;
-    border-color: rgba(6, 182, 212, 0.5);
-    box-shadow: 0 0 10px rgba(6, 182, 212, 0.25);
+    background: #0e374e !important;
+    color: #38bdf8 !important;
+    border-color: #06b6d4 !important;
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.35) !important;
 }
 
 /* Telemetry View Mode Switcher */
 .telemetry-view-mode {
     display: flex;
     align-items: center;
-    background: rgba(0, 0, 0, 0.4);
-    padding: 2px;
+    background: #0f172a !important;
+    padding: 3px;
     border-radius: 6px;
-    border: 1px solid var(--border-subtle);
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    gap: 4px;
 }
 
 .tvm-btn {
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
+    background: transparent !important;
+    border: none !important;
+    color: #94a3b8 !important;
     font-size: 11px;
-    font-weight: 600;
-    padding: 3px 8px;
+    font-weight: 700;
+    padding: 4px 10px;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
+.tvm-btn:hover {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
 .tvm-btn.active {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 8px rgba(2, 132, 199, 0.4) !important;
 }
 
 /* 4-Way Multi-Policy Board */
@@ -888,10 +939,10 @@ body {
 }
 
 .policy-card {
-    background: rgba(0, 0, 0, 0.35);
-    border: 1px solid var(--border-subtle);
+    background: #0f172a !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
     border-radius: 8px;
-    padding: 8px 12px;
+    padding: 10px 14px;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -899,13 +950,14 @@ body {
 }
 
 .policy-card:hover {
-    border-color: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    background: #1e293b !important;
 }
 
 .policy-card.highlight-winner {
-    border-color: rgba(16, 185, 129, 0.4);
-    background: rgba(16, 185, 129, 0.06);
-    box-shadow: 0 0 16px rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.5) !important;
+    background: rgba(16, 185, 129, 0.08) !important;
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.15) !important;
 }
 
 .pc-header {

@@ -16,13 +16,23 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=DIRECTORY, **kwargs)
 
+    def end_headers(self):
+        self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+        self.send_header('Pragma', 'no-cache')
+        self.send_header('Expires', '0')
+        super().end_headers()
+
+class ThreadingTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    allow_reuse_address = True
+    daemon_threads = True
+
 def main():
     os.chdir(DIRECTORY)
     # Find available port if 8080 is taken
     global PORT
     while PORT < 8100:
         try:
-            with socketserver.TCPServer(("", PORT), Handler) as httpd:
+            with ThreadingTCPServer(("", PORT), Handler) as httpd:
                 url = f"http://localhost:{PORT}/index.html"
                 print("=" * 70)
                 print(f"  PROJECT TEMPO: LIVE VISUALIZATION DASHBOARD")
