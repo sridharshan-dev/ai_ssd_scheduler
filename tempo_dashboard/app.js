@@ -18,7 +18,7 @@ const simState = {
     isRunning: false,
     speedMultiplier: 1,
     simTimeUs: 0.0,
-    activeScenario: 'canonical',
+    activeScenario: 'real_cheops',
     activeVisualPolicy: 's3',  // 's0', 's1', 's2', 's3'
     telemetryMode: '4way',     // '4way' or 'h2h'
     h2hBaseline: 's1',         // 's0', 's1', or 's2'
@@ -32,7 +32,10 @@ const simState = {
                 busyUntil: 0, 
                 currentOp: 'IDLE',
                 opStartUs: 0,
-                opDurationUs: 0
+                opDurationUs: 0,
+                currentReqId: null,
+                currentReqTier: null,
+                currentReqOp: null
             }))
         })),
         completed: [],
@@ -50,7 +53,10 @@ const simState = {
                 busyUntil: 0, 
                 currentOp: 'IDLE',
                 opStartUs: 0,
-                opDurationUs: 0
+                opDurationUs: 0,
+                currentReqId: null,
+                currentReqTier: null,
+                currentReqOp: null
             }))
         })),
         completed: [],
@@ -68,7 +74,10 @@ const simState = {
                 busyUntil: 0, 
                 currentOp: 'IDLE',
                 opStartUs: 0,
-                opDurationUs: 0
+                opDurationUs: 0,
+                currentReqId: null,
+                currentReqTier: null,
+                currentReqOp: null
             }))
         })),
         completed: [],
@@ -86,7 +95,10 @@ const simState = {
                 busyUntil: 0, 
                 currentOp: 'IDLE',
                 opStartUs: 0,
-                opDurationUs: 0
+                opDurationUs: 0,
+                currentReqId: null,
+                currentReqTier: null,
+                currentReqOp: null
             }))
         })),
         completed: [],
@@ -105,6 +117,12 @@ const simState = {
 
 // Generates Trace from CHEOPS'25 OPT-6.7B KV-Cache Offloading Patterns
 function generateTrace(scenario) {
+    if (scenario === 'real_cheops' && window.REAL_CHEOPS_TRACE && window.REAL_CHEOPS_TRACE.length > 0) {
+        simState.maxRequests = window.REAL_CHEOPS_TRACE.length;
+        // Deep clone trace entries so each simulation run starts completely fresh
+        return JSON.parse(JSON.stringify(window.REAL_CHEOPS_TRACE));
+    }
+
     const requests = [];
     let curTime = 20.0;
     
@@ -186,9 +204,13 @@ function predictHardwareDelay(hwChannels, req, nowUs) {
     let maxFinish = nowUs;
     const isWrite = (req.op === 'WRITE');
 
-    for (const chId of req.channels) {
+    for (const rawChId of req.channels) {
+        const chId = Math.abs(rawChId) % NAND_NUM_CHANNELS;
         const ch = hwChannels[chId];
-        const lun = ch.luns[req.lunIdx];
+        if (!ch) continue;
+        const lunIdx = Math.abs(req.lunIdx || 0) % NAND_LUNS_PER_CH;
+        const lun = ch.luns[lunIdx];
+        if (!lun) continue;
 
         if (!isWrite) {
             const senseStart = Math.max(nowUs, lun.busyUntil);
@@ -215,9 +237,17 @@ function dispatchRequest(hwChannels, req, nowUs, policyType) {
     const isErase = (req.op === 'ERASE');
 
     // Update physical channels and dies for live visual animation
-    for (const chId of req.channels) {
+    for (const rawChId of req.channels) {
+        const chId = Math.abs(rawChId) % NAND_NUM_CHANNELS;
         const ch = hwChannels[chId];
-        const lun = ch.luns[req.lunIdx];
+        if (!ch) continue;
+        const lunIdx = Math.abs(req.lunIdx || 0) % NAND_LUNS_PER_CH;
+        const lun = ch.luns[lunIdx];
+        if (!lun) continue;
+
+        lun.currentReqId = req.id;
+        lun.currentReqTier = req.tier;
+        lun.currentReqOp = req.op;
 
         if (isErase) {
             const duration = req.eraseDuration || 1000.0;
@@ -401,6 +431,9 @@ function stepSimulation(deltaUs) {
             for (const lun of ch.luns) {
                 if (lun.busyUntil <= now) {
                     lun.currentOp = 'IDLE';
+                    lun.currentReqId = null;
+                    lun.currentReqTier = null;
+                    lun.currentReqOp = null;
                 }
             }
         }
@@ -536,7 +569,12 @@ function stepSingleToken() {
     [simState.s0, simState.s1, simState.s2, simState.s3].forEach(sched => {
         for (const ch of sched.channels) {
             for (const lun of ch.luns) {
-                if (lun.busyUntil <= now) lun.currentOp = 'IDLE';
+                if (lun.busyUntil <= now) {
+                    lun.currentOp = 'IDLE';
+                    lun.currentReqId = null;
+                    lun.currentReqTier = null;
+                    lun.currentReqOp = null;
+                }
             }
         }
     });
@@ -800,7 +838,13 @@ function render() {
                 <span class="qc-id mono">Req #${req.id}</span>
                 <span class="qc-tier-tag tag-${tierClass}">${req.tier}</span>
             </div>
-            <div class="qc-channels">Target: Channels [${req.channels.join(', ')}]</div>
+            ${req.traceLine ? `
+            <div class="qc-real-row">
+                <span class="qc-lba mono">LBA ${req.lba ? req.lba.toLocaleString() : 'N/A'}</span>
+                <span class="qc-badge-real">CHEOPS #${req.traceLine}</span>
+            </div>
+            ` : ''}
+            <div class="qc-channels">Target: Channels [${req.channels.join(', ')}] • ${req.op} ${req.sizeKb || 128}KB</div>
             <div class="qc-deadline-row">
                 <span>Slack: <strong class="mono">${remSlack.toFixed(0)} µs</strong></span>
                 <span>Limit: ${req.slackUs.toFixed(0)} µs</span>
@@ -854,6 +898,26 @@ function render() {
             }
 
             const remTime = Math.max(0, lun.busyUntil - simState.simTimeUs);
+
+            let reqServicingHtml = '';
+            if (isBusy && lun.currentReqId) {
+                const tierClass = lun.currentReqTier ? lun.currentReqTier.toLowerCase() : 'normal';
+                reqServicingHtml = `
+                    <div class="die-servicing-req tier-${tierClass}" title="Servicing Req #${lun.currentReqId} (${lun.currentReqTier} ${lun.currentReqOp || ''})">
+                        <span class="dsr-icon">⚡</span>
+                        <span class="dsr-id mono">Req #${lun.currentReqId}</span>
+                        <span class="dsr-tier tag-${tierClass}">${lun.currentReqTier}</span>
+                    </div>
+                `;
+            } else {
+                reqServicingHtml = `
+                    <div class="die-servicing-req idle">
+                        <span class="dsr-icon">○</span>
+                        <span class="dsr-text">Idle</span>
+                    </div>
+                `;
+            }
+
             const dieDiv = document.createElement('div');
             dieDiv.className = `die-box ${opClass}`;
             dieDiv.innerHTML = `
@@ -861,9 +925,12 @@ function render() {
                     <span class="die-label">Die ${l}</span>
                     <span class="die-op-badge">${opBadge}</span>
                 </div>
-                <span class="mono" style="font-size: 10px; color: #9CA3AF;">
-                    ${isBusy ? `${remTime.toFixed(0)} µs left` : 'Ready'}
-                </span>
+                ${reqServicingHtml}
+                <div class="die-timing-row">
+                    <span class="mono" style="font-size: 10px; color: #94A3B8;">
+                        ${isBusy ? `${remTime.toFixed(0)} µs left` : 'Ready'}
+                    </span>
+                </div>
                 <div class="die-progress-bar">
                     <div class="die-progress-fill" style="width: ${progressPct.toFixed(0)}%"></div>
                 </div>
@@ -1029,6 +1096,9 @@ function resetSimulation() {
                 lun.currentOp = 'IDLE';
                 lun.opStartUs = 0;
                 lun.opDurationUs = 0;
+                lun.currentReqId = null;
+                lun.currentReqTier = null;
+                lun.currentReqOp = null;
             });
         });
     });
@@ -1163,11 +1233,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Scenario Selector
-    document.getElementById('select-scenario').addEventListener('change', (e) => {
-        simState.activeScenario = e.target.value;
-        resetSimulation();
-    });
+    // Scenario Selector (if present)
+    const selectScenario = document.getElementById('select-scenario');
+    if (selectScenario) {
+        selectScenario.addEventListener('change', (e) => {
+            simState.activeScenario = e.target.value;
+            resetSimulation();
+        });
+    }
 
     requestAnimationFrame(animationLoop);
 });
