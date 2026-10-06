@@ -9,6 +9,7 @@ from .nand import SSDConfig
 from .backend import SSDBackend
 from .request import Request, Priority
 from ..schedulers.base import BaseScheduler
+from ..workloads.phase_detector import PhaseDetector
 
 class EventType(IntEnum):
     ARRIVAL = 1
@@ -67,7 +68,8 @@ class Simulator:
     def __init__(
         self,
         config: SSDConfig = SSDConfig(),
-        max_in_flight: int = 32
+        max_in_flight: int = 32,
+        phase_aware_gc: bool = False
     ):
         self.config = config
         self.max_in_flight = max_in_flight
@@ -77,6 +79,8 @@ class Simulator:
         self.current_time_us = 0.0
         self.in_flight_count = 0
         self.completed_requests: List[Request] = []
+        self.phase_aware_gc = phase_aware_gc
+        self.phase_detector = PhaseDetector()
 
     def schedule_event(self, timestamp: float, event_type: EventType, payload: Any):
         self.event_counter += 1
@@ -113,6 +117,7 @@ class Simulator:
         self.current_time_us = 0.0
         self.in_flight_count = 0
         self.completed_requests = []
+        self.phase_detector = PhaseDetector()
         
         # Schedule all request arrivals
         for req in requests:
@@ -132,6 +137,7 @@ class Simulator:
             if evt.event_type == EventType.ARRIVAL:
                 req: Request = evt.payload
                 scheduler.enqueue(req, self.current_time_us)
+                self.phase_detector.observe(req, self.current_time_us)
                 self._try_dispatch(scheduler)
 
             elif evt.event_type == EventType.COMPLETION:
@@ -143,6 +149,9 @@ class Simulator:
 
             elif evt.event_type == EventType.GC_EVENT:
                 ch, lun, dur = evt.payload
+                if self.phase_aware_gc and not self.phase_detector.gc_allowed(self.current_time_us):
+                    self.schedule_event(self.current_time_us + 1000.0, EventType.GC_EVENT, evt.payload)
+                    continue
                 self.backend.inject_gc_pause(ch, lun, dur, self.current_time_us)
                 # Dispatch check in case new decisions need to be made
                 self._try_dispatch(scheduler)

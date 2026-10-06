@@ -1,6 +1,6 @@
 # Project TEMPO
 
-### An SSD that knows *what* the data is and *when* the GPU needs it
+### An SSD scheduler that knows which request matters and which flash channel is ready
 
 **Track:** Designing the SSD for the AI Era
 **Category:** Firmware / FTL architecture (simulation + live prototype)
@@ -12,7 +12,11 @@
 
 Today's SSD firmware sees an AI training job as an anonymous stream of block addresses. It cannot tell a permanent model weight from a KV-cache entry that dies in two seconds, and it has no idea whether the GPU is mid-computation or idle. Because of that blindness, it mixes data with wildly different lifetimes into the same erase block (driving write amplification past 3.5×) and fires garbage collection at the exact moment a distributed training cluster is waiting at a synchronization barrier (stalling every GPU in the cluster, not just one).
 
-**Project TEMPO adds two small pieces of intelligence to SSD firmware: a classifier that infers *what kind* of AI data each write is, and a phase detector that infers *what the GPU is doing right now*. It then uses both to decide where data physically lands and when background work is allowed to run.** No new NAND. No new silicon. No changes required to PyTorch. Just firmware that pays attention.
+**The implemented Project TEMPO prototype adds hardware-state awareness to AI-priority scheduling. It combines request urgency and deadline slack with predicted NAND channel/LUN service delay, so critical requests avoid head-of-line blocking behind writes on busy flash resources.** No new NAND or silicon is modeled. Semantic classification, physical lifetime placement, and phase-aware FTL behavior are extension paths rather than claims of the current benchmarked core.
+
+### Current Prototype Scope
+
+The validated contribution is a trace-driven scheduler and native C controller prototype. It compares FIFO, AI-priority, SSD-state-aware, and joint AI-plus-SSD-state policies on CHEOPS block traces. Current results support claims about deadline misses, tail latency, throughput, and arbitration overhead under contention. Classification, placement-pool accounting, and phase-aware GC are experimental extensions and are not yet validated as production FTL behavior.
 
 ---
 
@@ -34,13 +38,17 @@ The unifying cause is not NAND being slow. It is that **the firmware has no mode
 
 ---
 
-## 3. The Idea: Two Engines
+## 3. The Implemented Idea: Joint Request Scheduling
 
-TEMPO is two lightweight firmware engines feeding one placement-and-scheduling policy.
+TEMPO's implemented core is one lightweight dispatch policy combining AI urgency with physical SSD readiness.
 
-### Engine 1 — The Semantic Classifier ("What is this?")
+### Core Engine — Urgency Plus Flash State
 
-Watches the I/O stream and infers a data class from its signature alone — no host cooperation needed.
+For every pending request, TEMPO considers its AI priority, deadline slack, and predicted completion time from current channel/LUN timers. It preserves critical-tier precedence while selecting the least-blocked request within that tier. This is the mechanism measured by the main experiments and the native C controller prototype.
+
+### Extension — Semantic Classification ("What is this?")
+
+The repository contains an explainable online heuristic that watches the I/O stream and assigns a provisional data class. It is useful for future experiments, but no held-out accuracy result is claimed yet.
 
 | Class | Telltale signature | Where TEMPO puts it |
 |---|---|---|
@@ -51,9 +59,9 @@ Watches the I/O stream and infers a data class from its signature alone — no h
 
 The point: **data with the same lifetime lives together, so blocks die whole.** No valid-page copying, no fragmentation, no compaction storm.
 
-### Engine 2 — The Phase Detector ("What is the GPU doing?")
+### Extension — Phase Detection ("What is the workload doing?")
 
-AI training has a heartbeat. Data loading, forward pass, backward pass, checkpoint, synchronization barrier, idle — each has a distinct I/O fingerprint, and the pattern repeats every step. TEMPO learns that rhythm and predicts the next phase *before it arrives*.
+The repository contains an online I/O phase heuristic and an optional simulator GC gate. It classifies recent activity and defers injected GC during checkpoint/sync-like windows, but it does not yet claim measured GPU phase lead time or a production FTL implementation.
 
 ```
    Detected phase          TEMPO's decision
@@ -65,11 +73,11 @@ AI training has a heartbeat. Data loading, forward pass, backward pass, checkpoi
    Idle              →     fold pSLC back to QLC, scrub, wear-level
 ```
 
-**This is the part nobody else is doing.** The NVMe standard has a mechanism for *placement* hints (Flexible Data Placement). It has **no mechanism at all** for communicating *execution phase*. TEMPO infers it.
+This is a future research direction. The current evidence does not establish a production phase detector or a standards contribution.
 
-### Why the combination matters
+### Why the core matters
 
-Knowing a write is an optimizer state tells you nothing about whether the GPU is idle. Knowing the GPU is idle tells you nothing about where the data should go. Placement is a **spatial** decision; scheduling is a **temporal** one. Solve only one and you leave half the win on the table.
+Knowing a request is urgent tells you nothing about whether its target flash resources are blocked. The implemented contribution is the joint **urgency plus hardware readiness** decision. Placement and phase coordination remain separate extension tracks.
 
 ---
 
@@ -161,7 +169,7 @@ Structured for a 36-hour event. Adjust the clock, keep the order.
 - Train a **decision tree or small random forest** — deliberately not a neural net. It must be explainable, tiny, and plausibly runnable on an Arm Cortex-R controller.
 - Validate: classification accuracy per data class on held-out traces.
 
-**Deliverable:** classifier hitting a target of **>90% accuracy**, with a printed decision tree you can show a judge.
+**Status:** An explainable heuristic classifier exists for extension experiments. A held-out accuracy target is not part of the validated scheduler result.
 
 ### Phase 3 — Phase Detector *(Hours 15–22)*
 
@@ -169,21 +177,21 @@ Structured for a 36-hour event. Adjust the clock, keep the order.
 - Predict the next phase transition from the learned period.
 - **Measure detection lead time** — the single most important number in the project. Deferring GC only helps if you predict the barrier *before* it arrives. A checkpoint detected 200 ms late has already stalled the cluster.
 
-**Deliverable:** phase detector with a stated lead time in milliseconds.
+**Status:** An optional online phase heuristic and GC gate exist in the Python simulator. GPU phase lead time remains future validation work.
 
 > ⚠️ **Critical checkpoint.** If lead time is too short to be useful, drop the temporal half and ship placement-only. Test this early so the fallback is a decision, not a scramble.
 
 ### Phase 4 — Policy Engine into the FTL *(Hours 22–30)*
 
-- Modify MQSim's FTL: route writes to separate block pools by predicted class.
-- Add a GC gate driven by predicted phase.
-- Add pSLC absorption for detected checkpoint bursts, with folding during detected idle.
+- The current reference implementation routes classified requests to logical placement pools and records pool usage.
+- The current simulator can optionally gate injected GC using the online phase heuristic.
+- Physical pSLC absorption, folding, and MQSim FTL integration remain future work.
 
 **Deliverable:** TEMPO FTL running the same traces as the baseline.
 
 ### Phase 5 — Results and Demo *(Hours 30–36)*
 
-- Run the progressive comparison: **Baseline → +Semantic Placement → +Phase-Aware GC → Full TEMPO**. Progressive layering shows exactly which mechanism earns which gain.
+- Run the validated comparison: **FIFO → AI Priority → SSD State → Joint TEMPO**. Treat semantic placement and phase-aware GC as separate extension experiments.
 - Build the live demo (below).
 - Prepare the pitch.
 
@@ -205,12 +213,12 @@ Two screens, side by side, both running the same real trace.
 
 | Metric | Baseline | TEMPO target | How measured |
 |---|---|---|---|
-| **Write Amplification Factor** | 3.5–5.0× | **< 1.5×** | NAND writes ÷ host writes, from simulator counters |
+| **Write Amplification Factor** | Not modeled by the validated scheduler | Future work | Requires an FTL placement and NAND-media model |
 | **P99.9 read latency** | Spiky | **50%+ reduction** | Latency histogram across full trace |
-| **GC events during critical phases** | Uncontrolled | **≈ 0** | Cross-reference GC log with phase ground truth |
-| **Checkpoint stall time** | Full burst duration | **60%+ reduction** | Time-to-completion for checkpoint writes |
-| **Classifier accuracy** | n/a | **> 90%** | Predicted vs. labeled ground truth |
-| **Phase detection lead time** | n/a | **Report honestly** | Predicted transition vs. actual, in ms |
+| **GC events during critical phases** | Uncontrolled | Extension metric | Cross-reference optional phase gate with ground truth |
+| **Checkpoint stall time** | Not established | Future work | Requires checkpoint-specific placement behavior |
+| **Classifier accuracy** | n/a | Future work | Predicted vs. labeled ground truth |
+| **Phase detection lead time** | n/a | Future work | Predicted transition vs. actual, in ms |
 | **NAND endurance** | Baseline P/E | **Proportional to WAF gain** | Total program/erase cycles consumed |
 
 Reporting lead time honestly — even if it disappoints — is a strength. Judges trust a team that names its own weak parameter.
@@ -229,7 +237,9 @@ This section exists on purpose. It is what separates a proposal a reviewer trust
 - ❌ That SSDs can serve **live KV-cache decoding**. A 40–100 µs flash read against sub-microsecond HBM is a 1,000× gap.
 - ❌ That we eliminate **garbage collection**. Erase-before-write is architectural. We reschedule it; we do not remove it.
 
-**We do claim:** firmware that infers workload semantics and execution phase can materially reduce write amplification, checkpoint stalls, and tail latency — with no new silicon, no new standards, and no host code changes.
+**We do claim:** AI-priority scheduling that incorporates internal SSD channel/LUN readiness can reduce deadline misses and tail latency under the evaluated contention conditions, without changing NAND hardware.
+
+**We do not yet claim:** production-quality semantic classification, physical pSLC/QLC lifetime placement, measured GPU phase prediction lead time, WAF reduction, or a complete NVMeVirt kernel integration.
 
 ---
 

@@ -11,8 +11,8 @@
     "p99_9_us": 3792.31,
     "max_us": 3803.71,
     "throughput_mb_s": 5040.14,
-    "avg_arb_cycles": 483.3,
-    "projected_arm_us": 0.604
+    "avg_arb_cycles": 485.2,
+    "projected_arm_us": 0.606
   },
   "ai_priority": {
     "policy": "S1-AI-PRIORITY",
@@ -26,8 +26,8 @@
     "p99_9_us": 1633.99,
     "max_us": 1653.4,
     "throughput_mb_s": 5078.67,
-    "avg_arb_cycles": 613.4,
-    "projected_arm_us": 0.767
+    "avg_arb_cycles": 628.4,
+    "projected_arm_us": 0.785
   },
   "tempo": {
     "policy": "S3-TEMPO",
@@ -41,7 +41,7 @@
     "p99_9_us": 1736.61,
     "max_us": 1755.36,
     "throughput_mb_s": 5091.0,
-    "avg_arb_cycles": 13936.1,
-    "projected_arm_us": 17.42
+    "avg_arb_cycles": 15975.5,
+    "projected_arm_us": 19.969
   }
 }

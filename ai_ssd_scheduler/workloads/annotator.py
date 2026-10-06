@@ -2,6 +2,7 @@
 
 from typing import List
 from ..ssd.request import Request, Priority
+from .semantic_classifier import SemanticClassifier
 
 class AIAnnotator:
     """
@@ -17,7 +18,8 @@ class AIAnnotator:
         requests: List[Request],
         critical_read_fraction: float = 0.4,
         deadline_slack_us: float = 800.0,
-        normal_deadline_slack_us: float = 5000.0
+        normal_deadline_slack_us: float = 5000.0,
+        infer_semantics: bool = True
     ) -> List[Request]:
         """
         Assigns Priority and deadlines:
@@ -26,8 +28,17 @@ class AIAnnotator:
         - Background: File system metadata and sync flushes.
         """
         read_counter = 0
+        classifier = SemanticClassifier() if infer_semantics else None
         
         for req in requests:
+            classification = classifier.classify(req) if classifier else None
+            if classification:
+                req.data_class = classification.data_class.value
+                req.classification_confidence = classification.confidence
+                req.classification_sequentiality = classification.sequentiality
+                req.classification_overwrite_rate = classification.overwrite_rate
+                classifier.observe(req, classification)
+
             # Metadata operations are naturally background
             if 'M' in req.op or 'S' in req.op:
                 req.priority = Priority.BACKGROUND

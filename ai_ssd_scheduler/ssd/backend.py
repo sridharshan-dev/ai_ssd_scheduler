@@ -1,7 +1,7 @@
 """SSD Backend Controller modeling multi-channel striping and execution."""
 
 import math
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 from .nand import SSDConfig
 from .channel import Channel
 from .request import Request, PageSubRequest
@@ -13,9 +13,21 @@ class SSDBackend:
         self.channels: List[Channel] = [
             Channel(i, config.luns_per_channel) for i in range(config.num_channels)
         ]
+        self.pool_page_counts: Dict[str, int] = {}
+
+    @staticmethod
+    def select_placement_pool(req: Request) -> str:
+        """Map inferred lifetime classes to explicit FTL placement pools."""
+        return {
+            "KV_CACHE": "PSLC_HOT",
+            "OPTIMIZER_CHECKPOINT": "STRIPED_QLC",
+            "MODEL_WEIGHTS": "ISOLATED_QLC",
+            "TRAINING_SAMPLE": "READ_OPTIMIZED",
+        }.get(req.data_class, "DEFAULT")
 
     def decompose_request(self, req: Request) -> List[PageSubRequest]:
         """Stripes a host request across channels and LUNs in 32 KiB page chunks."""
+        req.placement_pool = self.select_placement_pool(req)
         page_size = self.config.page_size_bytes
         sectors_per_page = page_size // self.config.sector_size_bytes
         base_page = req.start_sector // sectors_per_page
@@ -42,6 +54,10 @@ class SSDBackend:
                 )
             )
             remaining_bytes -= page_bytes
+
+        self.pool_page_counts[req.placement_pool] = (
+            self.pool_page_counts.get(req.placement_pool, 0) + len(sub_requests)
+        )
             
         req.sub_pages = sub_requests
         return sub_requests

@@ -12,6 +12,10 @@ The hardware backend is parameterized to the published **NVMeVirt Samsung 970 Pr
 We evaluated four scheduling paradigms on identical real-world trace slices to answer the fundamental question:
 > **Does knowing internal SSD hardware state change which AI request should be served next, and when does it actually produce a measurable advantage?**
 
+### Validated Scope
+
+The results in this walkthrough validate TEMPO as a joint AI-priority and SSD-state-aware request scheduler. They do not by themselves validate a trained semantic classifier, physical pSLC/QLC placement, write-amplification reduction, or GPU phase-prediction lead time. Those are separate extension experiments in the repository.
+
 ---
 
 ## 1. Verified Real Workload Ground Truth (CHEOPS'25)

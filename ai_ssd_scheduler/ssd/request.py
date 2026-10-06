@@ -40,6 +40,11 @@ class Request:
     num_sectors: int
     priority: Priority = Priority.NORMAL
     deadline_us: float = 0.0
+    data_class: str = "UNKNOWN"
+    classification_confidence: float = 0.0
+    classification_sequentiality: float = 0.0
+    classification_overwrite_rate: float = 0.0
+    placement_pool: str = "DEFAULT"
     
     # Sub-requests mapped to channels and LUNs
     sub_pages: List[PageSubRequest] = field(default_factory=list)
