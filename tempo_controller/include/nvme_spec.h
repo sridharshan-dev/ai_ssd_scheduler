@@ -79,8 +79,17 @@ static inline uint64_t nvme_sqe_get_slba(const nvme_sq_entry_t *sqe) {
     return (((uint64_t)sqe->cdw11) << 32) | (uint64_t)sqe->cdw10;
 }
 
+static inline void nvme_sqe_set_slba(nvme_sq_entry_t *sqe, uint64_t slba) {
+    sqe->cdw10 = (uint32_t)(slba & 0xFFFFFFFF);
+    sqe->cdw11 = (uint32_t)(slba >> 32);
+}
+
 static inline uint32_t nvme_sqe_get_nlb(const nvme_sq_entry_t *sqe) {
     return sqe->cdw12 + 1; /* NVMe NLB is 0-based */
+}
+
+static inline void nvme_sqe_set_nlb(nvme_sq_entry_t *sqe, uint32_t nlb) {
+    sqe->cdw12 = (nlb > 0) ? (nlb - 1) : 0;
 }
 
 #endif /* NVME_SPEC_H */

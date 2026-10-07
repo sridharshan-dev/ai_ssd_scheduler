@@ -8,6 +8,7 @@
 #include "nand_backend.h"
 #include "tempo_scheduler.h"
 #include "host_workload.h"
+#include "tempo_verifier.h"
 
 #define MAX_COMPLETED_REQS 100000
 #define MAX_EVENTS         200000
@@ -112,9 +113,26 @@ int main(int argc, char **argv) {
     uint32_t max_qd = 32;
     uint32_t seed = 42;
     int json_output = 0;
+    int decision_log = 0;
 
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--policy") == 0 && i + 1 < argc) {
+        if (strcmp(argv[i], "--verify") == 0 || strcmp(argv[i], "--verify-all") == 0) {
+            return run_all_verification_tests();
+        } else if (strcmp(argv[i], "--test-exact") == 0) {
+            test_exact_scenario();
+            return 0;
+        } else if (strcmp(argv[i], "--test-sanity") == 0) {
+            test_4_sanity_policies();
+            return 0;
+        } else if (strcmp(argv[i], "--test-state") == 0) {
+            test_state_mutation();
+            return 0;
+        } else if (strcmp(argv[i], "--test-tiny") == 0) {
+            test_tiny_workload();
+            return 0;
+        } else if (strcmp(argv[i], "--decision-log") == 0 || strcmp(argv[i], "--verbose") == 0) {
+            decision_log = 1;
+        } else if (strcmp(argv[i], "--policy") == 0 && i + 1 < argc) {
             i++;
             if (strcmp(argv[i], "fifo") == 0) policy = POLICY_FIFO;
             else if (strcmp(argv[i], "ai_priority") == 0) policy = POLICY_AI_PRIORITY;
@@ -173,7 +191,7 @@ int main(int argc, char **argv) {
     #define TRY_DISPATCH() do { \
         while (in_flight_count < max_qd && queue.count > 0 && num_completed < MAX_COMPLETED_REQS) { \
             uint64_t cycles = 0; \
-            int win_idx = tempo_arbitrate(&queue, &backend, current_time_us, policy, &cycles); \
+            int win_idx = tempo_arbitrate_ex(&queue, &backend, current_time_us, policy, &cycles, decision_log); \
             if (win_idx < 0) break; \
             total_arbitration_cycles += cycles; \
             arbitration_count++; \
@@ -185,6 +203,12 @@ int main(int argc, char **argv) {
             int is_write = (selected.sqe.opcode == NVME_CMD_WRITE); \
             total_bytes_transferred += (uint64_t)nlb * 512ULL; \
             double completion_us = nand_backend_dispatch(&backend, slba, nlb, current_time_us, is_write); \
+            if (decision_log) { \
+                uint32_t ch_id = 0, lun_id = 0; \
+                nand_backend_get_mapping(slba, &ch_id, &lun_id, NULL); \
+                printf("  >> DISPATCHED: Req #%u -> Target CH%u/DIE%u | Completion Event at T=%.2f us\n\n", \
+                       selected.sqe.cid, ch_id, lun_id, completion_us); \
+            } \
             uint32_t c_idx = num_completed++; \
             completions[c_idx].cid = selected.sqe.cid; \
             completions[c_idx].tier = selected.tier; \

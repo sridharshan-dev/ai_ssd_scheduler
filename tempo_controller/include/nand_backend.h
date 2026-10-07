@@ -48,5 +48,6 @@ void   nand_backend_init(nand_backend_t *backend);
 double nand_backend_predict_delay(const nand_backend_t *backend, uint64_t slba, uint32_t nlb, double now_us, int is_write);
 double nand_backend_dispatch(nand_backend_t *backend, uint64_t slba, uint32_t nlb, double now_us, int is_write);
 void   nand_backend_inject_gc(nand_backend_t *backend, uint32_t ch_idx, uint32_t lun_idx, double now_us, double erase_us);
+void   nand_backend_get_mapping(uint64_t slba, uint32_t *out_ch, uint32_t *out_lun, uint32_t *out_page);
 
 #endif /* NAND_BACKEND_H */

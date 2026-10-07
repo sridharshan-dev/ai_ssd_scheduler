@@ -140,3 +140,10 @@ void nand_backend_inject_gc(nand_backend_t *backend, uint32_t ch_idx, uint32_t l
     lun->op_count++;
     backend->total_erase_cycles++;
 }
+
+void nand_backend_get_mapping(uint64_t slba, uint32_t *out_ch, uint32_t *out_lun, uint32_t *out_page) {
+    uint64_t start_page = slba / NAND_SECTORS_PER_PAGE;
+    if (out_ch) *out_ch = (uint32_t)(start_page % NAND_NUM_CHANNELS);
+    if (out_lun) *out_lun = (uint32_t)((start_page / NAND_NUM_CHANNELS) % NAND_LUNS_PER_CHANNEL);
+    if (out_page) *out_page = (uint32_t)start_page;
+}

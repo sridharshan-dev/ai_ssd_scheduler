@@ -33,5 +33,6 @@ void tempo_queue_init(tempo_queue_t *q);
 int  tempo_queue_push(tempo_queue_t *q, const nvme_sq_entry_t *sqe, double arrival_time_us);
 int  tempo_queue_remove(tempo_queue_t *q, uint32_t index, tempo_request_t *out_req);
 int  tempo_arbitrate(tempo_queue_t *q, const nand_backend_t *backend, double now_us, scheduler_policy_t policy, uint64_t *out_cycles);
+int  tempo_arbitrate_ex(tempo_queue_t *q, const nand_backend_t *backend, double now_us, scheduler_policy_t policy, uint64_t *out_cycles, int verbose_log);
 
 #endif /* TEMPO_SCHEDULER_H */

@@ -1,6 +1,8 @@
 #include "tempo_scheduler.h"
+#include <stdio.h>
 #include <string.h>
 #include <float.h>
+#include <inttypes.h>
 
 #ifdef _MSC_VER
 #include <intrin.h>
@@ -49,10 +51,25 @@ int tempo_queue_remove(tempo_queue_t *q, uint32_t index, tempo_request_t *out_re
 
 /* Arbitrates among pending requests in the queue according to selected policy */
 int tempo_arbitrate(tempo_queue_t *q, const nand_backend_t *backend, double now_us, scheduler_policy_t policy, uint64_t *out_cycles) {
+    return tempo_arbitrate_ex(q, backend, now_us, policy, out_cycles, 0);
+}
+
+int tempo_arbitrate_ex(tempo_queue_t *q, const nand_backend_t *backend, double now_us, scheduler_policy_t policy, uint64_t *out_cycles, int verbose_log) {
     if (q->count == 0) return -1;
 
-    uint64_t start_cycles = __rdtsc();
     int best_idx = -1;
+
+    const char *policy_names[] = {"S0-FIFO", "S1-AI-PRIORITY", "S2-SSD-STATE", "S3-TEMPO"};
+
+    if (verbose_log) {
+        printf("\n[SCHEDULER ARBITRATION @ T=%.1f us | Policy: %s]\n", now_us, policy_names[policy]);
+        printf("  Queue Depth: %u pending candidate(s)\n", q->count);
+        printf("  %-6s  %-9s  %-10s  %-8s  %-8s  %-15s  %-16s  %-12s  %-10s\n",
+               "ReqID", "Priority", "Slack", "LBA", "Target", "Busy-Until", "Predicted Delay", "Score", "Decision");
+        printf("  ---------------------------------------------------------------------------------------------------------------\n");
+    }
+
+    uint64_t start_cycles = __rdtsc();
 
     switch (policy) {
         case POLICY_FIFO: {
@@ -99,6 +116,7 @@ int tempo_arbitrate(tempo_queue_t *q, const nand_backend_t *backend, double now_
 
                 double delay = nand_backend_predict_delay(backend, slba, nlb, now_us, is_write);
                 q->entries[i].predicted_delay_us = delay;
+                q->entries[i].score = -delay;
 
                 if (delay < min_delay) {
                     min_delay = delay;
@@ -122,8 +140,6 @@ int tempo_arbitrate(tempo_queue_t *q, const nand_backend_t *backend, double now_
 
             for (uint32_t i = 0; i < q->count; i++) {
                 tempo_request_t *req = &q->entries[i];
-                /* Only evaluate candidates belonging to the highest available tier */
-                if (req->tier > highest_tier) continue;
 
                 uint64_t slba = nvme_sqe_get_slba(&req->sqe);
                 uint32_t nlb = nvme_sqe_get_nlb(&req->sqe);
@@ -131,6 +147,12 @@ int tempo_arbitrate(tempo_queue_t *q, const nand_backend_t *backend, double now_
 
                 double delay = nand_backend_predict_delay(backend, slba, nlb, now_us, is_write);
                 req->predicted_delay_us = delay;
+
+                /* Only evaluate candidates belonging to the highest available tier */
+                if (req->tier > highest_tier) {
+                    req->score = -999999.0;
+                    continue;
+                }
 
                 /* 1. Base Urgency Tier Weight */
                 double tier_base = 0.0;
@@ -178,5 +200,61 @@ int tempo_arbitrate(tempo_queue_t *q, const nand_backend_t *backend, double now_
         *out_cycles = (end_cycles >= start_cycles) ? (end_cycles - start_cycles) : 0;
     }
 
+    if (verbose_log) {
+        const char *tier_names[] = {"CRITICAL", "NORMAL", "BACKGROUND"};
+        for (uint32_t i = 0; i < q->count; i++) {
+            tempo_request_t *req = &q->entries[i];
+            uint64_t slba = nvme_sqe_get_slba(&req->sqe);
+            uint32_t nlb = nvme_sqe_get_nlb(&req->sqe);
+            int is_write = (req->sqe.opcode == NVME_CMD_WRITE);
+            double delay = (req->predicted_delay_us > 0.0) ? req->predicted_delay_us : nand_backend_predict_delay(backend, slba, nlb, now_us, is_write);
+
+            uint32_t ch_id = 0, lun_id = 0;
+            nand_backend_get_mapping(slba, &ch_id, &lun_id, NULL);
+
+            double busy_until = backend->channels[ch_id].luns[lun_id].busy_until_us;
+            char target_str[16];
+            snprintf(target_str, sizeof(target_str), "CH%u/D%u", ch_id, lun_id);
+
+            char slack_str[16];
+            snprintf(slack_str, sizeof(slack_str), "%u us", req->slack_us);
+
+            char busy_str[24];
+            if (busy_until > now_us) {
+                snprintf(busy_str, sizeof(busy_str), "%.1f us (+%.0fus)", busy_until, busy_until - now_us);
+            } else {
+                snprintf(busy_str, sizeof(busy_str), "IDLE (Ready)");
+            }
+
+            char delay_str[24];
+            snprintf(delay_str, sizeof(delay_str), "%.1f us", delay);
+
+            char score_str[24];
+            snprintf(score_str, sizeof(score_str), "%.1f", req->score);
+
+            int is_selected = ((int)i == best_idx);
+
+            printf("  %-6u  %-9s  %-10s  %-8" PRIu64 "  %-8s  %-15s  %-16s  %-12s  %s\n",
+                   req->sqe.cid,
+                   tier_names[req->tier],
+                   slack_str,
+                   (uint64_t)slba,
+                   target_str,
+                   busy_str,
+                   delay_str,
+                   score_str,
+                   is_selected ? ">> SELECTED <<" : "rejected");
+        }
+
+        if (best_idx >= 0) {
+            tempo_request_t *sel = &q->entries[best_idx];
+            uint32_t ch_id = 0, lun_id = 0;
+            nand_backend_get_mapping(nvme_sqe_get_slba(&sel->sqe), &ch_id, &lun_id, NULL);
+            printf("  >> %s WINNER: Req #%u (%s) -> Target CH%u/DIE%u | Delay: %.1f us | Score: %.1f\n\n",
+                   policy_names[policy], sel->sqe.cid, tier_names[sel->tier], ch_id, lun_id, sel->predicted_delay_us, sel->score);
+        }
+    }
+
     return best_idx;
 }
+
